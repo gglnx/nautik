@@ -1,0 +1,149 @@
+<?php
+/**
+ * @package		Nautik
+ * @version		1.0-$Id$
+ * @link		http://github.com/gglnx/nautik
+ * @author		Dennis Morhardt <info@dennismorhardt.de>
+ * @copyright	Copyright 2012, Dennis Morhardt
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/**
+ * Declare utf8 and the namespace
+ */
+declare(encoding='UTF-8');
+namespace Nautik\Action;
+
+/**
+ * Base class for every controller in the application
+ */
+class Controller {
+	/**
+	 *
+	 */
+	public $__returnActionPerformed = false;
+
+	/**
+	 *
+	 */
+	protected function _renderAction($controller, $action, $parameter = array()) {
+		// Run controller action partly
+		Request::setParameters($parameter);
+		return Dispatcher::runAction($controller, $action, true);
+	}
+	
+	/**
+	 *
+	 */
+	protected function _renderTemplate($template, $data = array(), $code = 200) {
+		// Set the HTTP header status
+		Response::setStatus($code);
+		
+		// Set the template file
+		Response::setTemplate($template);
+		
+		// Set the output data
+		Response::setData($data);
+	}
+	
+	/**
+	 *
+	 */
+	protected function _renderJson($data, $code = 200) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+
+		// Set the HTTP header status
+		Response::setStatus($code);
+
+		// Set the minetype
+		Response::setMinetype('json');
+
+		// Set the json
+		Response::setData(json_encode($data), true);
+
+		return false;
+	}
+	
+	/**
+	 *
+	 */
+	protected function _renderText($text, $code = 200, $minetype = 'html') {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+
+		// Set the HTTP header status
+		Response::setStatus($code);
+		
+		// Set the minetype
+		Response::setMinetype($minetype);
+
+		// Set the text
+		Response::setData($text, true);
+
+		return false;
+	}
+	
+	/**
+	 *
+	 */
+	protected function _render404() {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+		
+		// Not target for 404 errors defined
+		if ( false == ( $router = Router::getTargetFor( 404 ) ) )
+			throw new \Nautik\Core\Exception("No target for a 404 error page was defined.");
+				
+		// Set http status
+		Response::setStatus(404);
+		
+		// Run error action
+		Request::setParameters($router->parameters);
+		Dispatcher::$currentRoute = $router;
+		return Dispatcher::runAction($router->controller, $router->action);
+	}
+
+	/**
+	 *
+	 */
+	protected function _redirect($location) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+		
+		// Perform a redirect
+		return Response::redirect($location);
+	}
+	
+	/**
+	 *
+	 */
+	private function _checkIfPerformed() {
+		// Check if a return action was already preformed
+		if ( $this->__returnActionPerformed )
+			throw new \Nautik\Core\Exception('Render and/or redirect actions can only called once in one action.');
+	
+		// Set return action preformed to true
+		$this->__returnActionPerformed = true;
+	}
+}
