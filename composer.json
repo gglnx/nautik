@@ -9,13 +9,13 @@
         {
             "name": "Dennis Morhardt",
             "email": "info@dennismorhardt.de",
-			"homepage": "http://www.dennismorhardt.de/",
+			"homepage": "http://www.dennismorhardt.de/"
         },
     ],
 	"autoload": {
         "psr-0": {"Nautik": "src/"}
-    }
+    },
     "require": {
         "php": ">=5.3.0"
-    },
+    }
 }
