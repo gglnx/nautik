@@ -66,6 +66,8 @@ class Response {
 		'plain' => 'text/plain',
 		'html' => 'text/html',
 		'csv' => 'application/csv',
+		'css' => 'text/css',
+		'js' => 'text/javascript'
 	);
 	
 	/**
