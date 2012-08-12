@@ -99,7 +99,7 @@ class Dispatcher {
 	/**
 	 *
 	 */
-	public static function runAction($controller, $action, $partly = false) {
+	public static function runAction($controller, $action) {
 		// Check if controller exists
 		if ( false == is_file( $controllerLocation = APP . 'controllers/' . $controller . '.php' ) )
 			throw new \Nautik\Core\Exception("Controller '$controller' doesn't exists.");
@@ -115,7 +115,7 @@ class Dispatcher {
 		
 		// Run the action
 		$data = $controller->{$action}();
-		
+
 		// Data fetching
 		if ( false === $controller->__returnActionPerformed ):
 			// Format returned data
@@ -146,9 +146,6 @@ class Dispatcher {
 
 			// Merge data from controller and action
 			$data = $globalData + $data;
-
-			// Send to reponse object
-			if ( false == $partly ) Response::setData($data);
 		endif;
 		
 		// Return the object

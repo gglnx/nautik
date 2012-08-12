@@ -96,11 +96,6 @@ class Response {
 	protected static $template;
 	
 	/**
-	 * Stores the information that is returned from the controller
-	 */
-	protected static $data = array();
-	
-	/**
 	 *
 	 */
 	protected static $isOutput = true;
@@ -166,7 +161,7 @@ class Response {
 	 */
 	public static function enableTemplate() {
 		// Enable use for template for this request
-		self::$isOutput = true;
+		self::$useTemplate = true;
 	}
 	
 	/**
@@ -174,7 +169,7 @@ class Response {
 	 */
 	public static function disableTemplate() {
 		// Disable use for template for this request
-		self::$isOutput = false;
+		self::$useTemplate = false;
 	}
 	
 	/**
@@ -207,37 +202,6 @@ class Response {
 	public static function getMinetype($useShortform = true) {
 		// Get the current minetype
 		return $useShortform ? self::$minetype : self::$config[self::$minetype];
-	}
-	
-	/**
-	 *
-	 */
-	public static function getData() {
-		// Return the current action data
-		return self::$data;
-	}
-	
-	/**
-	 *
-	 */
-	public static function setData($data, $raw = false) {
-		// If the action returns a false disable the output
-		if ( false === $data ):
-			self::disableOutput();
-		// If the returned data is raw use no template
-		elseif ( true === $raw ):
-			self::$data = $data;
-			self::disableTemplate();
-		// If the returned data is string, transform it to an array
-		elseif ( is_string( $data ) ):
-			self::$data = array('data' => $data);
-		// No data or no array? Store an empty array
-		elseif ( NULL === $data || false == is_array( $data ) ):
-			self::$data = array();
-		// Array? Perfect! Save it.
-		else:
-			self::$data = $data;
-		endif;
 	}
 	
 	/**

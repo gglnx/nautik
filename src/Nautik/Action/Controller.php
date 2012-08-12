@@ -49,21 +49,23 @@ class Controller {
 	protected function _renderAction($controller, $action, $parameter = array()) {
 		// Run controller action partly
 		Request::setParameters($parameter);
-		return Dispatcher::runAction($controller, $action, true);
+		return Dispatcher::runAction($controller, $action);
 	}
 	
 	/**
 	 *
 	 */
 	protected function _renderTemplate($template, $data = array(), $code = 200) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+		
 		// Set the HTTP header status
 		Response::setStatus($code);
 		
 		// Set the template file
 		Response::setTemplate($template);
 		
-		// Set the output data
-		Response::setData($data);
+		return $data;
 	}
 	
 	/**
@@ -80,9 +82,9 @@ class Controller {
 		Response::setMinetype('json');
 
 		// Set the json
-		Response::setData(json_encode($data), true);
+		Response::disableTemplate();
 
-		return false;
+		return json_encode($data);
 	}
 	
 	/**
@@ -98,10 +100,10 @@ class Controller {
 		// Set the minetype
 		Response::setMinetype($minetype);
 
-		// Set the text
-		Response::setData($text, true);
+		// Disable templating
+		Response::disableTemplate();
 
-		return false;
+		return $text;
 	}
 	
 	/**
