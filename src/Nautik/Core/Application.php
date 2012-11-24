@@ -83,7 +83,7 @@ class Application {
 
 		// Search in application/models for models
 		foreach ( glob( APP . "models/*.php" ) as $filename )
-			include APP . "models/" . $filename;
+			include $filename;
 
 		// Run the dispatcher
 		\Nautik\Action\Dispatcher::run();
