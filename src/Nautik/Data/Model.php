@@ -70,7 +70,6 @@ class Model {
 		// Name of the collection
 		$this->__class = get_called_class();
 		$this->__collection = \Nautik\Core\Inflector::tableize($this->__class);
-		var_dump($this->__class);
 		
 		// Set the data
 		if ( true == $raw )
@@ -188,7 +187,7 @@ class Model {
 	 */
 	public static function find($findOne = false) {
 		// Create a new query object
-		return new Query(get_called_class(), strtolower(\Nautik\Tools\Inflector::tableize(get_called_class())), $findOne);
+		return new Query(get_called_class(), strtolower(\Nautik\Core\Inflector::tableize(get_called_class())), $findOne);
 	}
 	
 	/**

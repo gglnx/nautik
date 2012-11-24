@@ -94,7 +94,7 @@ class Connection {
 		self::connect();
 		
 		// Select the collection
-		if ( false == self::$__collection[$collection] ):
+		if ( false == isset ( self::$__collection[$collection] ) ):
 			try {
 				self::$__collection[$collection] = new \MongoCollection(self::$__mongo->selectDB(self::$__database), $collection);
 			} catch( \MongoCursorException $e ) {

@@ -84,7 +84,7 @@ class Query implements \IteratorAggregate {
 	/**
 	 *
 	 */
-	public function select($select = true) {
+	public function select($returnData = true) {
 		// Open the query
 		$query = Connection::getCollection($this->collection)->find($this->query['fields'], $this->query['options']);
 		
@@ -92,27 +92,31 @@ class Query implements \IteratorAggregate {
 		$query->sort($this->query['sort']);
 		
 		// Limit entries
-		if ( $this->query['limit'] )
+		if ( isset( $this->query['limit'] ) )
 			$query->limit($this->query['limit']);
 		
 		// Skip entries
-		if ( $this->query['skip'] )
+		if ( isset( $this->query['skip'] ) )
 			$query->skip($this->query['skip']);
 			
 		// Get the count
-		$this->count = $query->count(($this->query['limit'] || $this->query['skip']));
+		$this->count = $query->count((isset( $this->query['limit']) || isset($this->query['skip'])));
 	
 		// Run this query
-		if ( false == $select )
+		if ( false == $returnData )
 			return $this;
 			
+		// Check if results were returned
+		if ( 0 == $this->count )
+			return false;
+
 		// Transform the MongoCursor object to an array
 		$objects = array();
 		foreach ( $query as $id => $object )
 			$objects[] = new $this->model($object, true, true);
-			
+
 		// Return the array or only just one object
-		return $this->single ? ( $objects[0] ?: false ) : $objects;
+		return $this->single ? $objects[0] : $objects;
     }
 	
 	/**
@@ -133,14 +137,17 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function is($field, $value) {
+		// Translate 'id' to '_id'
 		if ( 'id' == $field ):
 			$field = '_id';
 			$value = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
 		endif;
 		
+		// Create Mongo reference if value is a model
 		if ( $value instanceof \Nautik\Data\Model )
 			$value = \MongoDBRef::create($value->getCollection(), $value->id);
 		
+		// Add field to the query
 		$this->query['fields'][$field] = $value;
 		return $this;
 	}
@@ -149,11 +156,13 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function not($field, $value) {
+		// Translate 'id' to '_id'
 		if ( 'id' == $field ):
 			$field = '_id';
 			$value = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
 		endif;
 	
+		// Add operator to the query
 		return $this->addOperator('not', $field, $value);
 	}
 	
@@ -161,6 +170,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function in($field, $values) {
+		// Translate 'id' to '_id'
 		if ( 'id' == $field ):
 			$field = '_id';
 			$values = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
@@ -169,7 +179,8 @@ class Query implements \IteratorAggregate {
 		// Transform $values to an array if needed
 		if ( false == is_array( $values ) )
 			$values = array($values);
-			
+		
+		// Add operator to the query
 		return $this->addOperator('in', $field, $values);
 	}
 	
@@ -177,11 +188,13 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function notIn($field, $values) {
+		// Translate 'id' to '_id'
 		if ( 'id' == $field ):
 			$field = '_id';
 			$values = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
 		endif;
 	
+		// Add operator to the query
 		return $this->addOperator('nin', $field, $values);
 	}
 	
@@ -189,6 +202,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function notEqual($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('ne', $field, $value);
 	}
 	
@@ -196,6 +210,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function ref($field, $collection, $id) {
+		// Add reference to the query
 		return $this->is($field, \MongoDBRef::create($collection, $id));
 	}
 	
@@ -203,6 +218,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function gt($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('gt', $field, $value);
 	}
 	
@@ -210,6 +226,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function gte($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('gte', $field, $value);
 	}
 	
@@ -217,6 +234,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function lt($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('lt', $field, $value);
 	}
 	
@@ -224,6 +242,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function lte($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('lte', $field, $value);
 	}
 	
@@ -231,6 +250,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function range($field, $start, $end) {
+		// Add operator to the query
 		return $this->addOperator('gt', $field, $start)->addOperator('lt', $field, $end);
 	}
 	
@@ -238,6 +258,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function size($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('size', $field, $value);
 	}
 	
@@ -245,6 +266,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function exists($field, $exists = true) {
+		// Add operator to the query
 		return $this->addOperator('exists', $field, $exists);
 	}
 	
@@ -252,6 +274,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function all($field, $values) {
+		// Add operator to the query
 		return $this->addOperator('all', $field, $values);
 	}
 	
@@ -259,6 +282,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function mod($field, $value) {
+		// Add operator to the query
 		return $this->addOperator('mod', $field, $value);
 	}
 	
@@ -266,9 +290,11 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function near($field, $lat, $lng, $maxDistance = null) {
+		// Add max distance operator to the query
 		if ( null !== $maxDistance )
 			$this->addOperator('maxDistance', $field, $maxDistance);
 		
+		// Add operator to the query
 		return $this->addOperator('near', $field, array($lat, $lng));
 	}
 	
@@ -276,6 +302,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function regex($field, $value) {
+		// Add regex operator to the query
 		$this->query['fields'][$field] = new \MongoRegex($value);
 		
 		return $this;
@@ -285,6 +312,7 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function like($field, $value) {
+		// Add like operator to the query
 		return $this->regex($field, '/.*' . $value . '.*/i');
 	}
 	
