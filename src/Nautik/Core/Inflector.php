@@ -253,6 +253,10 @@ class Inflector {
 	 * @return string Under_scored and plural table name (i.e. `'posts'`).
 	 */
 	public static function tableize($className) {
+		// If namespaced name, get only the class name
+		if ( false !== strpos( $className, "\\" ) )
+			$className = strstr($className, "\\");
+
 		return static::pluralize(static::underscore($className));
 	}
 
