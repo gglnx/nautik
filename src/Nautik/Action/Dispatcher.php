@@ -76,6 +76,9 @@ class Dispatcher {
 					$template = self::$currentRoute->controller . '/' . self::$currentRoute->action . '.' . Response::getMinetype();
 				else
 					$template = $template . '.' . Response::getMinetype();
+					
+				// Add .twig file extension
+				$template = $template . '.twig';
 
 				// Check if the template exists
 				if ( false === file_exists( APP . 'views/' . $template ) )
