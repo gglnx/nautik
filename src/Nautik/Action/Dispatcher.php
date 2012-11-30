@@ -90,6 +90,9 @@ class Dispatcher {
 					'debug' => \Nautik\Core\Application::$debug
 				));
 
+				// Add custom filters for nautik
+				$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
+
 				// Load and render template
 				exit($templateRender->loadTemplate($template)->render($data));
 			endif;
