@@ -57,6 +57,13 @@ class Application {
 	public static $defaultTimezone = "GMT";
 
 	/**
+	 * Locale of the application
+	 * See the php.net docs for configuration options
+	 * @see http://www.php.net/setlocale
+	 */
+	public static $locale = "";
+
+	/**
 	 * The location of your application
 	 */
 	public static $urlBase = "/nautik/";
@@ -73,6 +80,9 @@ class Application {
 
 		// Use Nautik as default exception handler
 		set_exception_handler(array('\Nautik\Core\Exception', 'handler'));
+
+		// Set locale
+		setlocale(LC_ALL, static::$locale);
 		
 		// Setup the database
 		\Nautik\Data\Connection::init(static::$database);
