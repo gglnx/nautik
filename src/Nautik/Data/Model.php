@@ -42,7 +42,7 @@ class Model {
 	/**
 	 *
 	 */
-	private $__collection = null;
+	public $__collection = null;
 	
 	/**
 	 *
@@ -65,7 +65,8 @@ class Model {
 	public function __construct($data = array(), $raw = false, $saved = false) {
 		// Name of the collection
 		$this->__class = get_called_class();
-		$this->__collection = \Nautik\Core\Inflector::tableize($this->__class);
+		if ( null == $this->__collection )
+			$this->__collection = \Nautik\Core\Inflector::tableize($this->__class);
 		
 		// Set the data
 		if ( true == $raw )
