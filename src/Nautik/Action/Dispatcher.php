@@ -41,6 +41,11 @@ class Dispatcher {
 	public static $currentRoute;
 
 	/**
+	 *
+	 */
+	public static $templateRender;
+
+	/**
 	 * Starts the dispatcher and renders the page from the request
 	 */
 	public static function run($base = "/") {
@@ -80,20 +85,8 @@ class Dispatcher {
 				if ( false === file_exists( APP . 'views/' . $template ) )
 					throw new \Nautik\Core\Exception("Template '$template' doesn't exists.");
 
-				// Init the external template render
-				$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'views'), array(
-					'cache' => APP . 'cache/templates',
-					'debug' => \Nautik\Core\Application::$debug
-				));
-
-				// Set timezone
-				$templateRender->getExtension('core')->setTimezone(\App\Application::$defaultTimezone);
-
-				// Add custom filters for nautik
-				$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
-
 				// Load and render template
-				exit($templateRender->loadTemplate($template)->render($data));
+				exit(self::$templateRender->loadTemplate($template)->render($data));
 			endif;
 
 			// Exit with the template

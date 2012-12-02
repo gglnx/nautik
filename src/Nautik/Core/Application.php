@@ -91,6 +91,18 @@ class Application {
 		foreach ( glob( APP . "models/*.php" ) as $filename )
 			include $filename;
 
+		// Init Twig as template render
+		\Nautik\Action\Dispatcher::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'views'), array(
+			'cache' => APP . 'cache/templates',
+			'debug' => static::$debug
+		));
+
+		// Set timezone
+		\Nautik\Action\Dispatcher::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
+
+		// Add custom filters for nautik
+		\Nautik\Action\Dispatcher::$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
+
 		// Run the dispatcher
 		\Nautik\Action\Dispatcher::run();
 	}
