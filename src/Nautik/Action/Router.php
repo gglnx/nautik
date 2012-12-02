@@ -28,10 +28,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * Declare utf8 and the namespace
- */
-declare(encoding='UTF-8');
 namespace Nautik\Action;
 
 /**
