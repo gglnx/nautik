@@ -99,8 +99,10 @@ class Model {
 			$value = null;
 			
 		// Return a DataTime object instand of a MongoDate object
-		if ( $value instanceof \MongoDate )
-			$value = new DateTime("@{$value->sec}");
+		if ( $value instanceof \MongoDate ):
+			$value = new \DateTime("@{$value->sec}");
+			$value->setTimezone(new \DateTimeZone(\App\Application::$defaultTimezone));
+		endif;
 			
 		// Run getter
 		if ( 'id' == $parameter && method_exists( $this, "get_id" ) )

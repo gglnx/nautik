@@ -86,6 +86,9 @@ class Dispatcher {
 					'debug' => \Nautik\Core\Application::$debug
 				));
 
+				// Set timezone
+				$templateRender->getExtension('core')->setTimezone(\App\Application::$defaultTimezone);
+
 				// Add custom filters for nautik
 				$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
 
