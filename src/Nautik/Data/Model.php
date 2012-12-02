@@ -249,14 +249,14 @@ class Model {
 			$this->$setter;
 		
 		// Create or update database references
-		foreach ( $this->__data as $key => $value ):
+		/*foreach ( $this->__data as $key => $value ):
 			if ( is_array( $value ) && !\MongoDBRef::isRef( $value ) ):
 				$this->__data[$key] = $this->createOrUpdateDbRefs($value);
 			elseif ( $value instanceof \Nautik\Data\Model ):
 				$value->save();
 				$this->__data[$key] = \MongoDBRef::create($value->__collection, $value->id);
 			endif;
-		endforeach;
+		endforeach;*/
 		
 		// Update or create?
 		if ( false == $this->__new )
