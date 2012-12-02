@@ -147,7 +147,10 @@ class Dispatcher {
 			endforeach;
 
 			// Merge data from controller and action
-			$data = $globalData + $data;
+			$data = array_merge($globalData, $data);
+
+			// Add request information
+			$data["_request"] = (array) self::$currentRoute;
 		endif;
 		
 		// Return the object
