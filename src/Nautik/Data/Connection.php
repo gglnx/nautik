@@ -94,7 +94,7 @@ class Connection {
 			try {
 				self::$__collection[$collection] = new \MongoCollection(self::$__mongo->selectDB(self::$__database), $collection);
 			} catch( \MongoCursorException $e ) {
-				throw new \Nautik\Core\Exception('Could not select the collection: %s', $e->getMessage());
+				throw new \Nautik\Core\Exception('Could not select the collection: ' . $e->getMessage());
 			}
 		endif;
 		
@@ -110,7 +110,7 @@ class Connection {
 		try {
 			self::getCollection($collection)->drop();
 		} catch( \MongoCursorException $e ) {
-			throw new \Nautik\Core\Exception('Could not drop the collection: %s', $e->getMessage());
+			throw new \Nautik\Core\Exception('Could not drop the collection: ' . $e->getMessage());
 		}
 	}
 
@@ -125,7 +125,7 @@ class Connection {
 		try {
 			return self::$__mongo->selectDB(self::$__database)->command($cmd);
 		} catch( \MongoException $e ) {
-			throw new \Nautik\Core\Exception('Could run the command: %s', $e->getMessage());
+			throw new \Nautik\Core\Exception('Could not run the command: ' . $e->getMessage());
 		}
 	}
 }
