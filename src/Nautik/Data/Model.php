@@ -37,12 +37,12 @@ class Model {
 	/**
 	 *
 	 */
-	private $__data = array();
+	protected $__data = array();
 	
 	/**
 	 *
 	 */
-	public $__collection = null;
+	protected $__collection = null;
 	
 	/**
 	 *
@@ -104,6 +104,12 @@ class Model {
 			$value = new \DateTime("@{$value->sec}");
 			$value->setTimezone(new \DateTimeZone(\App\Application::$defaultTimezone));
 		endif;
+
+		// Return model if value is database reference
+		if ( is_array( $value ) && \MongoDBRef::isRef( $value ) ):
+			$model = "App\\" . \Nautik\Core\Inflector::classify($value['$ref']);
+			$value = $this->__data[$parameter] = $model::findById($value['$id'])->select();
+		endif;
 			
 		// Run getter
 		if ( 'id' == $parameter && method_exists( $this, "get_id" ) )
@@ -132,9 +138,9 @@ class Model {
 			$value = \MongoDate($value->getTimestamp());
 		
 		// If value is an array
-		if ( is_array( $value ) )
+		if ( is_array( $value ) && !\MongoDBRef::isRef( $value ) )
 			$value = new \ArrayObject($value, \ArrayObject::ARRAY_AS_PROPS);
-	
+
 		// Run setter
 		if ( '_id' == $parameter && method_exists( $this, "set_id" ) )
 			$value = $this->set_id($value);
@@ -258,24 +264,26 @@ class Model {
 			$this->$setter();
 		
 		// Create or update database references
-		/*foreach ( $this->__data as $key => $value ):
-			if ( is_array( $value ) && !\MongoDBRef::isRef( $value ) ):
-				$this->__data[$key] = $this->createOrUpdateDbRefs($value);
-			elseif ( $value instanceof \Nautik\Data\Model ):
+		$data = $this->__data;
+		foreach ( $data as $key => $value ):
+			if ( $value instanceof \Nautik\Data\Model ):
+				// Save model
 				$value->save();
-				$this->__data[$key] = \MongoDBRef::create($value->__collection, $value->id);
+
+				// Create database reference
+				$data[$key] = \MongoDBRef::create($value->__collection, $value->id);
 			endif;
-		endforeach;*/
+		endforeach;
 		
 		// Update or create?
 		if ( false == $this->__new )
-			$data = $this->__update();
+			$state = $this->__update($data);
 		else
-			$data = $this->__create();
+			$state = $this->__create($data);
 		
 		// Check if nothing failed
-		if ( false == $data )
-			throw new \Nautik\Exception('Updating or creating of record has failed.');
+		if ( false == $state )
+			throw new \Nautik\Core\Exception('Updating or creating of record has failed.');
 			
 		// Set the state of the model
 		$this->__saved = true;
@@ -292,16 +300,16 @@ class Model {
 	/**
 	 *
 	 */
-	private function __update() {
+	private function __update($data) {
 		// Run 'before_update' callback
 		if ( method_exists( $this, $setter = "before_update" ) )
 			$this->$setter();
 		
 		// Set 'updated_at'
-		$this->__data['updated_at'] = new \MongoDate();
+		$this->__data['updated_at'] = $data['updated_at'] = new \MongoDate();
 		
 		// Update
-		$result = \Nautik\Data\Connection::getCollection($this->__collection)->update(array('_id' => $this->__data['_id']), $this->__data);
+		$result = \Nautik\Data\Connection::getCollection($this->__collection)->update(array('_id' => $this->__data['_id']), $data);
 		
 		// Run 'after_update' callback
 		if ( method_exists( $this, $setter = "after_update" ) )
@@ -314,17 +322,17 @@ class Model {
 	/**
 	 *
 	 */
-	private function __create() {
+	private function __create($data) {
 		// Run 'before_create' callback
 		if ( method_exists( $this, $setter = "before_create" ) )
 			$this->$setter();
 		
 		// Set 'updated_at' & 'created_at'
-		$this->__data['updated_at'] = new \MongoDate();
-		$this->__data['created_at'] = new \MongoDate();
+		$this->__data['updated_at'] = $data['updated_at'] = new \MongoDate();
+		$this->__data['created_at'] = $data['created_at'] = new \MongoDate();
 		
 		// Insert into the collection
-		$result = \Nautik\Data\Connection::getCollection($this->__collection)->insert($this->__data);
+		$result = \Nautik\Data\Connection::getCollection($this->__collection)->insert($data);
 		
 		// Run 'after_create' callback
 		if ( method_exists( $this, $setter = "after_create" ) )
