@@ -98,7 +98,7 @@ class Model {
 		// Parameter was not found
 		else
 			$value = null;
-			
+
 		// Return a DataTime object instand of a MongoDate object
 		if ( $value instanceof \MongoDate ):
 			$value = new \DateTime("@{$value->sec}");
@@ -210,6 +210,14 @@ class Model {
 
 		// Return a single object
 		return $query->is('id', $id_or_ids);
+	}
+
+	/**
+	 *
+	 */
+	public static function query() {
+		// Create a new MapReduce object
+		return new MapReduce(get_called_class(), strtolower(\Nautik\Core\Inflector::tableize(get_called_class())));
 	}
 	
 	/**

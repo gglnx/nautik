@@ -113,4 +113,19 @@ class Connection {
 			throw new \Nautik\Core\Exception('Could not drop the collection: %s', $e->getMessage());
 		}
 	}
+
+	/**
+	 * 
+	 */
+	public static function command($cmd) {
+		// Connect to MongoDB if needed
+		self::connect();
+
+		// Send command to database
+		try {
+			return self::$__mongo->selectDB(self::$__database)->command($cmd);
+		} catch( \MongoException $e ) {
+			throw new \Nautik\Core\Exception('Could run the command: %s', $e->getMessage());
+		}
+	}
 }
