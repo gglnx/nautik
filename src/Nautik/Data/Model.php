@@ -226,7 +226,7 @@ class Model {
 	public function delete() {
 		// Run 'before_delete' callback
 		if ( method_exists( $this, $setter = "before_delete" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Delete the item
 		$state = \Nautik\Data\Connection::getCollection($this->__collection)->remove(array('_id' => $this->__data['_id']));
@@ -240,7 +240,7 @@ class Model {
 		
 		// Run 'after_delete' callback
 		if ( method_exists( $this, $setter = "after_delete" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		return $state;
 	}
@@ -255,7 +255,7 @@ class Model {
 			
 		// Run 'before_save' callback
 		if ( method_exists( $this, $setter = "before_save" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Create or update database references
 		/*foreach ( $this->__data as $key => $value ):
@@ -283,7 +283,7 @@ class Model {
 		
 		// Run 'after_save' callback
 		if ( method_exists( $this, $setter = "after_save" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Everything fine.
 		return true;
@@ -295,7 +295,7 @@ class Model {
 	private function __update() {
 		// Run 'before_update' callback
 		if ( method_exists( $this, $setter = "before_update" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Set 'updated_at'
 		$this->__data['updated_at'] = new \MongoDate();
@@ -305,7 +305,7 @@ class Model {
 		
 		// Run 'after_update' callback
 		if ( method_exists( $this, $setter = "after_update" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Return the result
 		return $result;
@@ -317,7 +317,7 @@ class Model {
 	private function __create() {
 		// Run 'before_create' callback
 		if ( method_exists( $this, $setter = "before_create" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Set 'updated_at' & 'created_at'
 		$this->__data['updated_at'] = new \MongoDate();
@@ -328,7 +328,7 @@ class Model {
 		
 		// Run 'after_create' callback
 		if ( method_exists( $this, $setter = "after_create" ) )
-			$this->$setter;
+			$this->$setter();
 		
 		// Return the result
 		return $result;
