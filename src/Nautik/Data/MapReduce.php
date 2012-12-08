@@ -33,22 +33,7 @@ namespace Nautik\Data;
 /**
  * 
  */
-class MapReduce {
-	/**
-	 *
-	 */  
-	private $query = array();
-  
-	/**
-	 *
-	 */
-	private $model;
-	
-	/**
-	 *
-	 */
-	private $collection;
-
+class MapReduce extends Query {
 	/**
 	 * 
 	 */
@@ -57,20 +42,19 @@ class MapReduce {
 	/**
 	 *
 	 */
-	public function __construct($model, $collection) {
-		$this->model = $model;
-		$this->collection = $collection;
-		
-		return $this;
-	}
-
-	/**
-	 *
-	 */
-	public function select() {
+	public function select($returnData = true) {
 		// Generate output name
 		if ( false == isset( $this->query["out"] ) )
 			$this->query["out"] = "_" . md5($this->collection . rand(0, 1000));
+
+		// Add data query
+		if ( !empty( $this->query["fields"] ) )
+			$this->query["query"] = $this->query["fields"];
+		unset($this->query["fields"]);
+
+		// If sort is blank, remove it
+		if ( empty( $this->query["sort"] ) )
+			unset($this->query["sort"]);
 
 		// Add collection name to MapReduce query
 		$this->query = array("mapreduce" => $this->collection) + $this->query;
@@ -82,9 +66,10 @@ class MapReduce {
 		if ( !isset( $response["errmsg"] ) && 1 === (int) $response["ok"] ):
 			// Get data
 			$data = array();
-			foreach ( Connection::getCollection($response["result"])->find() as $d ):
+			if ( $returnData ) foreach ( Connection::getCollection($response["result"])->find() as $d )
 				$data[] = $d;
-			endforeach;
+			else
+				$data = true;
 		else:
 			throw new \Nautik\Core\Exception('Error on MapReduce: ' . $response["errmsg"]);
 		endif;
@@ -129,40 +114,10 @@ class MapReduce {
 	/**
 	 *
 	 */
-	public function query($query) {
-		// Add query to query
-		$this->query["query"] = $query;
-
-		return $this;
-	}
-
-	/**
-	 *
-	 */
 	public function keepOutput($keepOutput = true) {
 		// Keep output?
 		$this->keepOutput = $keepOutput;
 	
-		return $this;
-	}
-
-	/**
-	 *
-	 */
-	public function sort($sort) {
-		// Add sort to query
-		$this->query["sort"] = $sort;
-
-		return $this;
-	}
-
-	/**
-	 *
-	 */
-	public function limit($limit) {
-		// Add limit to query
-		$this->query["limit"] = $limit;
-
 		return $this;
 	}
 
