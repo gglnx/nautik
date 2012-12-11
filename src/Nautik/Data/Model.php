@@ -333,6 +333,7 @@ class Model {
 		
 		// Insert into the collection
 		$result = \Nautik\Data\Connection::getCollection($this->__collection)->insert($data);
+		$this->__data['_id'] = $data['_id'];
 		
 		// Run 'after_create' callback
 		if ( method_exists( $this, $setter = "after_create" ) )
