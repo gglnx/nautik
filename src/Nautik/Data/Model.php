@@ -37,12 +37,12 @@ class Model {
 	/**
 	 *
 	 */
-	protected $__data = array();
+	private $__data = array();
 	
 	/**
 	 *
 	 */
-	protected $__collection = null;
+	private $__collection = null;
 	
 	/**
 	 *
@@ -185,6 +185,14 @@ class Model {
 	public function isSaved() {
 		// Return if the record has been saved
 		return $this->__saved;
+	}
+
+	/**
+	 *
+	 */
+	public function getCollection() {
+		// Return the collection name of this model
+		return $this->__collection;
 	}
 	
 	/**

@@ -141,7 +141,7 @@ class Query implements \IteratorAggregate {
 		
 		// Create Mongo reference if value is a model
 		if ( $value instanceof \Nautik\Data\Model )
-			$value = \MongoDBRef::create($value->__collection, $value->id);
+			$value = \MongoDBRef::create($value->getCollection(), $value->id);
 		
 		// Add field to the query
 		$this->query['fields'][$field] = $value;
