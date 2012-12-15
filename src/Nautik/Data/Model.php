@@ -133,9 +133,9 @@ class Model {
 		
 		// Transform timestamp or DateTime objects to MongoDate
 		if ( 'created_at' == $parameter || 'updated_at' == $parameter )
-			$value = \MongoDate((int) $value);
+			$value = new \MongoDate((int) $value);
 		elseif ( $value instanceof \DateTime )
-			$value = \MongoDate($value->getTimestamp());
+			$value = new \MongoDate($value->getTimestamp());
 		
 		// If value is an array
 		if ( is_array( $value ) && !\MongoDBRef::isRef( $value ) )
