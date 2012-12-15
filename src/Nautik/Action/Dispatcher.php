@@ -147,6 +147,15 @@ class Dispatcher {
 
 			// Add request information
 			$data["_request"] = (array) self::$currentRoute;
+
+			// Add flash message
+			if ( isset( $_COOKIE["message"] ) && is_array( $message = @unserialize( $_COOKIE["message"] ) ) ):
+				// Get message
+				$data["_flash"] = array("type" => $message[0], "message" => $message[1]);
+
+				// Remove old messages
+				setcookie("message", "", time()-3600, "/");
+			endif;
 		endif;
 		
 		// Return the object

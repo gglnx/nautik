@@ -125,12 +125,27 @@ class Controller {
 	/**
 	 *
 	 */
-	protected function _redirect($location) {
+	protected function _redirect($location, $message = null) {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
+
+		// Add message to redirect
+		if ( is_array( $message ) )
+			$this->_message($message[0], $message[1]);
 		
 		// Perform a redirect
 		return Response::redirect($location);
+	}
+
+	/**
+	 *
+	 */
+	protected function _message($type, $message) {
+		// Remove old messages
+		setcookie("message", "", time()-3600, "/");
+
+		// Set message
+		setcookie("message", serialize(array($type, $message)), 0, "/");
 	}
 	
 	/**
