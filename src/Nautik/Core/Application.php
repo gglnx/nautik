@@ -102,6 +102,7 @@ class Application {
 
 		// Add custom filters for nautik
 		\Nautik\Action\Dispatcher::$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
+		\Nautik\Action\Dispatcher::$templateRender->addFilter('md5', new \Twig_Filter_Function('md5'));
 
 		// Run the dispatcher
 		\Nautik\Action\Dispatcher::run();
