@@ -146,7 +146,7 @@ class Query implements \IteratorAggregate {
 	public function sq($type, $subquery) {
 		// Check if subquery type exists
 		if ( false == in_array( $type, array( 'and', 'or', 'nor', 'not' ) ) )
-			throw new \Nautik\Core\Exception("The subquery type {$type} does not exist.");
+			throw new \Nautik\Core\Exception("The subquery type '{$type}' doesn't exist.");
 
 		// Run subquery
 		$q = $subquery(new self($this->model, $this->collection, $this->single));
