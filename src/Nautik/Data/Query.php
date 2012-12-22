@@ -37,7 +37,7 @@ class Query implements \IteratorAggregate {
 	/**
 	 *
 	 */
-	protected $query = array('fields' => array(), 'sort' => array(), 'options' => array());
+	public $query = array('fields' => array(), 'sort' => array(), 'options' => array());
 	
 	/**
 	 *
@@ -130,6 +130,36 @@ class Query implements \IteratorAggregate {
 	}
 	
 	/**
+	 * sq(string $type = ['and', 'or', 'nor', 'not'], callback $subquery)
+	 *
+	 * Add a subquery like 'and', 'or', 'nor' (XOR) or 'not' to the query. Uses the
+	 * same Query API as the main query. The main query object is returned.
+	 *
+	 * $query->sq('or', function($q) {
+	 *     // One of these fields must match to find documents
+	 *     $q->is('field1', 'value1');
+	 *     $q->is('field2', 'value2');
+	 *
+	 *     return $q;
+	 * });
+	 */
+	public function sq($type, $subquery) {
+		// Check if subquery type exists
+		if ( false == in_array( $type, array( 'and', 'or', 'nor', 'not' ) ) )
+			throw new \Nautik\Core\Exception("The subquery type {$type} does not exist.");
+
+		// Run subquery
+		$q = $subquery(new self($this->model, $this->collection, $this->single));
+
+		// Format query
+		$this->query['fields']['$' . $type] = array();
+		foreach ( $q->query['fields'] as $qf => $qv )
+			$this->query['fields']['$' . $type][] = array($qf => $qv);
+
+		return $this;
+	}
+
+	/**
 	 *
 	 */
 	public function is($field, $value) {
@@ -146,20 +176,6 @@ class Query implements \IteratorAggregate {
 		// Add field to the query
 		$this->query['fields'][$field] = $value;
 		return $this;
-	}
-	
-	/**
-	 *
-	 */
-	public function not($field, $value) {
-		// Translate 'id' to '_id'
-		if ( 'id' == $field ):
-			$field = '_id';
-			$value = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
-		endif;
-	
-		// Add operator to the query
-		return $this->addOperator('not', $field, $value);
 	}
 	
 	/**
@@ -195,9 +211,11 @@ class Query implements \IteratorAggregate {
 	}
 	
 	/**
+	 * isNot(string $field, mixed $value)
 	 *
+	 * The selected field must not match the value. The query object is returned.
 	 */
-	public function notEqual($field, $value) {
+	public function isNot($field, $value) {
 		// Add operator to the query
 		return $this->addOperator('ne', $field, $value);
 	}
@@ -311,7 +329,7 @@ class Query implements \IteratorAggregate {
 		// Add like operator to the query
 		return $this->regex($field, '/.*' . $value . '.*/i');
 	}
-	
+
 	/**
 	 *
 	 */
