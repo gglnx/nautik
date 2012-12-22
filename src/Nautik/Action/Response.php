@@ -252,7 +252,7 @@ class Response {
 	/**
 	 *
 	 */
-	public static function redirect($location, $status = 301, $sendIt = true) {
+	public static function redirect($location, $status = 302, $sendIt = true) {
 		// Set the headers and the status code...
 		self::setStatus($status);
 		self::addHeader('Location', $location);
