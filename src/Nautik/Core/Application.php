@@ -115,7 +115,9 @@ class Application {
 		\Nautik\Action\Dispatcher::$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
 		\Nautik\Action\Dispatcher::$templateRender->addFilter('md5', new \Twig_Filter_Function('md5'));
 
-		// Run the dispatcher
-		\Nautik\Action\Dispatcher::run();
+		// Run the dispatcher, if run is not silence
+		if ( false == defined( 'SILENCE' ) || 1 !== SILENCE ):
+			\Nautik\Action\Dispatcher::run();
+		endif;
 	}
 }
