@@ -123,29 +123,33 @@ class Controller {
 	}
 
 	/**
+	 * _redirect(string $location[, int $code, bool $sendIt])
 	 *
+	 * Wrapper for Response::redirect(). Sends a redirect with 302 HTTP status code (can
+	 * be changed with the $code parameter, use 301 for permanent redirects). If $sendIt 
+	 * is false the redirect will not exits the application.
 	 */
-	protected function _redirect($location, $message = null) {
+	protected function _redirect($location, $code = 302, $sendIt = true) {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
-
-		// Add message to redirect
-		if ( is_array( $message ) )
-			$this->_message($message[0], $message[1]);
 		
 		// Perform a redirect
-		return Response::redirect($location);
+		return Response::redirect($location, $code, $sendIt);
 	}
 
 	/**
+	 * _message(string $type, string $type)
 	 *
+	 * Adds a flash message to show on the next request of the user. Use it
+	 * with a redirect:
+	 *
+	 * return $this->_message('success', 'Yay!')->_redirect('/success');
 	 */
 	protected function _message($type, $message) {
-		// Remove old messages
-		setcookie("message", "", time()-3600, "/");
+		// Save message
+		$_SESSION["message"] = array('type' => $type, 'message' => $message);
 
-		// Set message
-		setcookie("message", serialize(array($type, $message)), 0, "/");
+		return $this;
 	}
 	
 	/**

@@ -250,7 +250,11 @@ class Response {
 	}
 	
 	/**
+	 * redirect(string $location[, int $code, bool $sendIt])
 	 *
+	 * Sends a redirect with 302 HTTP status code (can be changed with the $code
+	 * parameter, use 301 for permanent redirects). If $sendIt is false the redirect
+	 * will not exits the application.
 	 */
 	public static function redirect($location, $status = 302, $sendIt = true) {
 		// Set the headers and the status code...
@@ -258,8 +262,10 @@ class Response {
 		self::addHeader('Location', $location);
 		
 		// Send the headers if requested
-		if ( true == $sendIt )
+		if ( true == $sendIt ):
 			self::sendHeaders();
+			exit;
+		endif;
 	}
 	
 	/**
