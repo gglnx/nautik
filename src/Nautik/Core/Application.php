@@ -65,6 +65,14 @@ class Application {
 	public static $urlBase = "/nautik/";
 
 	/**
+	 * Start session function, can be over written.
+	 */
+	public static function startSession() {
+		// Start session
+		session_start();
+	}
+
+	/**
 	 * Function to start the application and the framework behind it
 	 */
 	public final static function run() {
@@ -82,6 +90,9 @@ class Application {
 		
 		// Setup the database
 		\Nautik\Data\Connection::init(static::$database);
+
+		// Start session
+		static::startSession();
 
 		// Load routes and the AppController
 		include APP . 'Routes.php';
