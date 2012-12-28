@@ -170,6 +170,41 @@ class Model {
 		// Return false if the parameter has not been found
 		return false;
 	}
+
+	/**
+	 * __toString()
+	 *
+	 * Returns string version (a MongoDB reference as JSON) of the Model.
+	 */
+	public function __toString() {
+		return json_encode(\MongoDBRef::create($this->__collection, $this->__get('id')));
+	}
+
+	/**
+	 * __toArray([bool $resolveDBRefs])
+	 *
+	 * Returns model data as an array. If $resolveDBRefs is true (defaults) when
+	 * all database reference will be solved, otherwise only string representation
+	 * will be included.
+	 */
+	public function __toArray($resolveDBRefs = true) {
+		// Get model data
+		$data = array();
+		foreach ( array_keys( $this->__data ) as $key ):
+			// Get data for key
+			$data[$key] = $this->__get($key);
+
+			// Resolve DB references
+			if ( $resolveDBRefs && $data[$key] instanceof \Nautik\Data\Model ):
+				$data[$key] = $data[$key]->__toArray();
+			elseif ( $data[$key] instanceof \Nautik\Data\Model ):
+				$data[$key] = $data[$key]->__toString();
+			endif;
+		endforeach;
+
+		// Return data
+		return $data;
+	}
 	
 	/**
 	 *
