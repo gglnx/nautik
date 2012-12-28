@@ -78,12 +78,37 @@ class Query implements \IteratorAggregate {
     }
 
 	/**
+	 * select([bool $returnData])
 	 *
+	 * Sends the query to database and executes it. When $returnData is true (defaults) and the query
+	 * was successful a single model object (when it was a single query) or an array of model object (if
+	 * it was a multiple query) will be returned, else the query object will be returned. When the query
+	 * was not successful false will be returned.
 	 */
 	public function select($returnData = true) {
+		// Optimize query
+		$query = array();
+		foreach ( $this->query['fields'] as $index => $query_part ):
+			// Query part is a subquery
+			if ( is_string( $index ) ):
+				$query[$index] = $query_part;
+			// Query part is a field
+			else:
+				// Get key for this field
+				$key = array_keys($query_part)[0];
+
+				// Add field to query or merge if operators
+				if ( isset( $query[$key] ) && is_array( $query[$key] ) ):
+					$query[$key] = array_merge($query[$key], $query_part[$key]);
+				else:
+					$query[$key] = $query_part[$key];
+				endif;
+			endif;
+		endforeach;
+
 		// Open the query
-		$query = Connection::getCollection($this->collection)->find($this->query['fields'], $this->query['options']);
-		
+		$query = Connection::getCollection($this->collection)->find($query, $this->query['options']);
+
 		// Sort entries
 		$query->sort($this->query['sort']);
 		
@@ -116,24 +141,29 @@ class Query implements \IteratorAggregate {
     }
 	
 	/**
+	 * count()
 	 *
+	 * Sends the query to database and executes it. Number of found documents will be returned.
 	 */
 	public function count() {
 		return $this->select(false)->count;
 	}
 	
 	/**
+	 * remove([bool $justOne])
 	 *
+	 * Sends the query to database and executes it. All or just one (if $justOne is true) found documents
+	 * will be deleted. If it was successful true will be returned, else false.
 	 */
 	public function remove($justOne = false) {
 		return Connection::getCollection($this->collection)->remove($this->query['fields'], $justOne);
 	}
 	
 	/**
-	 * sq(string $type = ['and', 'or', 'nor', 'not'], callback $subquery)
+	 * sq(string $type = ['and', 'or', 'nor'], callback $subquery)
 	 *
-	 * Add a subquery like 'and', 'or', 'nor' (XOR) or 'not' to the query. Uses the
-	 * same Query API as the main query. The main query object is returned.
+	 * Add a subquery like 'and', 'or' or 'nor' (XOR) to the query. 'not' is currently not supported.
+	 * Uses the same Query API as the main query. The main query object is returned.
 	 *
 	 * $query->sq('or', function($q) {
 	 *     // One of these fields must match to find documents
@@ -145,22 +175,23 @@ class Query implements \IteratorAggregate {
 	 */
 	public function sq($type, $subquery) {
 		// Check if subquery type exists
-		if ( false == in_array( $type, array( 'and', 'or', 'nor', 'not' ) ) )
+		if ( false == in_array( $type, array( 'and', 'or', 'nor' ) ) )
 			throw new \Nautik\Core\Exception("The subquery type '{$type}' doesn't exist.");
 
 		// Run subquery
 		$q = $subquery(new self($this->model, $this->collection, $this->single));
 
-		// Format query
-		$this->query['fields']['$' . $type] = array();
-		foreach ( $q->query['fields'] as $qf => $qv )
-			$this->query['fields']['$' . $type][] = array($qf => $qv);
+		// Add query
+		$this->query['fields']['$' . $type] = $q->query['fields'];
 
 		return $this;
 	}
 
 	/**
+	 * is(string $field, mixed $value)
 	 *
+	 * Checks if $field is equal to $value, which can be string, numeric, array, object or
+	 * an operator (for that use the operator functions). The query object is returned.
 	 */
 	public function is($field, $value) {
 		// Translate 'id' to '_id'
@@ -174,12 +205,14 @@ class Query implements \IteratorAggregate {
 			$value = \MongoDBRef::create($value->getCollection(), $value->id);
 		
 		// Add field to the query
-		$this->query['fields'][$field] = $value;
+		$this->query['fields'][] = array($field => $value);
 		return $this;
 	}
 	
 	/**
+	 * in(string $field, string|array $values)
 	 *
+	 * Checks if $field is equal to one of the values in $values. The uery object is returned.
 	 */
 	public function in($field, $values) {
 		// Translate 'id' to '_id'
@@ -197,7 +230,9 @@ class Query implements \IteratorAggregate {
 	}
 	
 	/**
+	 * notIn(string $field, string|array $values)
 	 *
+	 * Checks if $field is not equal to one of the values in $values. The query object is returned.
 	 */
 	public function notIn($field, $values) {
 		// Translate 'id' to '_id'
@@ -205,6 +240,10 @@ class Query implements \IteratorAggregate {
 			$field = '_id';
 			$values = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
 		endif;
+
+		// Transform $values to an array if needed
+		if ( false == is_array( $values ) )
+			$values = array($values);
 	
 		// Add operator to the query
 		return $this->addOperator('nin', $field, $values);
@@ -213,7 +252,7 @@ class Query implements \IteratorAggregate {
 	/**
 	 * isNot(string $field, mixed $value)
 	 *
-	 * The selected field must not match the value. The query object is returned.
+	 * Checks if $field is not equal to $value. The query object is returned.
 	 */
 	public function isNot($field, $value) {
 		// Add operator to the query
@@ -317,7 +356,7 @@ class Query implements \IteratorAggregate {
 	 */
 	public function regex($field, $value) {
 		// Add regex operator to the query
-		$this->query['fields'][$field] = new \MongoRegex($value);
+		$this->is($field, new \MongoRegex($value));
 		
 		return $this;
 	}
@@ -334,7 +373,8 @@ class Query implements \IteratorAggregate {
 	 *
 	 */
 	public function jsfunc($function) {
-		$this->query['fields']['$where'] = new \MongoCode($function);
+		// Add $where field
+		$this->is('$where', new \MongoCode($function));
 		
 		return $this;
 	}
@@ -386,10 +426,12 @@ class Query implements \IteratorAggregate {
 	}
 	
 	/**
+	 * addOperator(string $operator, string $field, mixed $value)
 	 *
+	 * Helper function to add operators to the query.
 	 */
 	private function addOperator($operator, $field, $value) {
-		$this->query['fields'][$field]['$' . $operator] = $value;
+		$this->is($field, array('$' . $operator => $value));
 		
 		return $this;
 	}
