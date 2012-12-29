@@ -74,6 +74,7 @@ class Exception extends \Exception {
 						elseif ( is_object( $arg ) ) $trace['args'][$index] = get_class($arg) . ' Object';
 						elseif ( is_bool( $arg ) ) $trace['args'][$index] = $arg ? 'true' : 'false';
 						elseif ( is_int( $arg ) ) $trace['args'][$index] = $arg;
+						elseif ( is_resource( $arg ) ) $trace['args'][$index] = get_resource_type( $arg ) . ' Resource';
 						else $trace['args'][$index] = preg_replace("/[\n\r]/", "", htmlspecialchars(substr($arg, 0, 64)));
 					endforeach;
 					$args = implode($trace['args'], ", ");
