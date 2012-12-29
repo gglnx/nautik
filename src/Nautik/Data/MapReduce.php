@@ -47,9 +47,25 @@ class MapReduce extends Query {
 		if ( false == isset( $this->query["out"] ) )
 			$this->query["out"] = "_" . md5($this->collection . rand(0, 1000));
 
-		// Add data query
-		if ( !empty( $this->query["fields"] ) )
-			$this->query["query"] = $this->query["fields"];
+		// Optimize query
+		$this->query["query"] = array();
+		foreach ( $this->query['fields'] as $index => $query_part ):
+			// Query part is a subquery
+			if ( is_string( $index ) ):
+				$this->query["query"][$index] = $query_part;
+			// Query part is a field
+			else:
+				// Get key for this field
+				$key = array_keys($query_part)[0];
+
+				// Add field to query or merge if operators
+				if ( isset( $query[$key] ) && is_array( $query[$key] ) ):
+					$this->query["query"][$key] = array_merge($this->query["query"][$key], $query_part[$key]);
+				else:
+					$this->query["query"][$key] = $query_part[$key];
+				endif;
+			endif;
+		endforeach;
 		unset($this->query["fields"]);
 
 		// If sort is blank, remove it
