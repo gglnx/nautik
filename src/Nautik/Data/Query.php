@@ -195,7 +195,7 @@ class Query implements \IteratorAggregate {
 	 */
 	public function is($field, $value) {
 		// Translate 'id' to '_id'
-		if ( 'id' == $field ):
+		if ( 'id' == $field && !is_array( $value ) ):
 			$field = '_id';
 			$value = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
 		endif;
@@ -215,15 +215,17 @@ class Query implements \IteratorAggregate {
 	 * Checks if $field is equal to one of the values in $values. The uery object is returned.
 	 */
 	public function in($field, $values) {
-		// Translate 'id' to '_id'
-		if ( 'id' == $field ):
-			$field = '_id';
-			$values = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
-		endif;
-		
 		// Transform $values to an array if needed
 		if ( false == is_array( $values ) )
 			$values = array($values);
+
+		// Translate ids into MongoIds if needed
+		if ( 'id' == $field ):
+			$field = '_id';
+			$values = array_map(function($value) {
+				return ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
+			}, $values);
+		endif;
 		
 		// Add operator to the query
 		return $this->addOperator('in', $field, $values);
@@ -235,15 +237,17 @@ class Query implements \IteratorAggregate {
 	 * Checks if $field is not equal to one of the values in $values. The query object is returned.
 	 */
 	public function notIn($field, $values) {
-		// Translate 'id' to '_id'
-		if ( 'id' == $field ):
-			$field = '_id';
-			$values = ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
-		endif;
-
 		// Transform $values to an array if needed
 		if ( false == is_array( $values ) )
 			$values = array($values);
+
+		// Translate ids into MongoIds if needed
+		if ( 'id' == $field ):
+			$field = '_id';
+			$values = array_map(function($value) {
+				return ( $value instanceof \MongoId ) ? $value : new \MongoId($value);
+			}, $values);
+		endif;
 	
 		// Add operator to the query
 		return $this->addOperator('nin', $field, $values);
