@@ -315,6 +315,8 @@ class Model {
 
 				// Create database reference
 				$data[$key] = \MongoDBRef::create($value->__collection, $value->id);
+			elseif ( $value instanceof \ArrayObject ):
+				$data[$key] = $data[$key]->getArrayCopy();
 			endif;
 		endforeach;
 		
