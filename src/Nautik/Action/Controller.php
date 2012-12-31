@@ -51,10 +51,7 @@ class Controller {
 	/**
 	 *
 	 */
-	protected function _renderTemplate($template, $data = array(), $code = 200) {
-		// Check if a output action has be already performed
-		$this->_checkIfPerformed();
-		
+	protected function _useTemplate($template, $data = array(), $code = 200) {
 		// Set the HTTP header status
 		Response::setStatus($code);
 		
