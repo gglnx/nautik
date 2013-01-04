@@ -135,7 +135,7 @@ class Dispatcher {
 				$value = $property->getValue($controller);
 
 				// Leave models and stdClass, remove other objects
-				if ( is_object( $value ) && false == ( $value instanceof \Nautik\Data\Query || $value instanceof \Nautik\Data\Model || $value instanceof \stdClass ) )
+				if ( is_object( $value ) && false == ( $value instanceof \Nautik\Data\Query || $value instanceof \Nautik\Data\Model || $value instanceof \ArrayObject || $value instanceof \Inspekt_Cage || $value instanceof \stdClass ) )
 					continue;
 						
 				// Add property to available data
