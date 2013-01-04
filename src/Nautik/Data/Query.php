@@ -129,7 +129,7 @@ class Query implements \IteratorAggregate {
 			
 		// Check if results were returned
 		if ( 0 == $this->count )
-			return false;
+			return $this->single ? false : array();
 
 		// Transform the MongoCursor object to an array
 		$objects = array();
