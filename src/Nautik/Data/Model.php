@@ -205,6 +205,16 @@ class Model {
 		// Return data
 		return $data;
 	}
+
+	/**
+	 * __toDBRef()
+	 *
+	 * Returns the model as a database reference (DBRef).
+	 */
+	public function __toDBRef() {
+		// Create database reference
+		return new \MongoDBRef($this->__collection, $this->__data['_id']);
+	}
 	
 	/**
 	 *
