@@ -213,7 +213,7 @@ class Model {
 	 */
 	public function __toDBRef() {
 		// Create database reference
-		return new \MongoDBRef($this->__collection, $this->__data['_id']);
+		return \MongoDBRef::create($this->__collection, $this->id);
 	}
 	
 	/**
