@@ -1,10 +1,10 @@
 <?php
 /**
  * @package     Nautik
- * @version     1.0-$Id$
- * @link        http://github.com/gglnx/nautik
+ * @version     2.0
+ * @link        https://github.com/gglnx/nautik
  * @author      Dennis Morhardt <info@dennismorhardt.de>
- * @copyright   Copyright 2012, Dennis Morhardt
+ * @copyright   Copyright 2013, Dennis Morhardt
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,12 +28,24 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Nautik\Core;
+/**
+ * Namespace
+ */
+namespace Nautik;
 
 /**
- * Application main class
+ * Exceptions
  */
-class Application {
+class NautikException extends \Exception { }
+class ControllerNotFoundException extends NautikException { }
+class ActionNotFoundException extends NautikException { }
+class ErrorNotFoundException extends NautikException { }
+class ReturnActionAlreadyPerformedException extends NautikException { }
+
+/**
+ * Main class, contains start process and dispatcher function
+ */
+class Nautik {
 	/**
 	 * With this configuration variable you can enable the debug mode
 	 * of the application. All errors will be displayed.
@@ -41,13 +53,9 @@ class Application {
 	public static $debug = true;
 
 	/**
-	 * Your MongoDB configuration settings, server location and database
-	 */
-	public static $database = array("mongodb://localhost", "nautik");
-
-	/**
 	 * Default timezone of the application
 	 * See the php.net docs for configuration options
+	 *
 	 * @see http://www.php.net/timezones
 	 */
 	public static $defaultTimezone = "GMT";
@@ -55,89 +63,500 @@ class Application {
 	/**
 	 * Locale of the application
 	 * See the php.net docs for configuration options
+	 *
 	 * @see http://www.php.net/setlocale
 	 */
 	public static $locale = "";
 
 	/**
-	 * The location of your application
+	 * Instance of Twig_Environment
+	 *
+	 * @see http://twig.sensiolabs.org/api/master/Twig_Environment.html
 	 */
-	public static $urlBase = "/nautik/";
+	public static $templateRender;
 
 	/**
-	 * Start session function, can be over written.
+	 * Instance of Symfony\Component\Routing\Router
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/Routing/Router.html
 	 */
-	public static function startSession() {
-		// Start session
-		session_start();
-	}
+	public static $routing;
 
 	/**
-	 * Custom application start
+	 * Instance of Symfony\Component\HttpFoundation\Request
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html
+	 */
+	public static $request;
+
+	/**
+	 * Instance of Symfony\Component\HttpFoundation\Response
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Response.html
+	 */
+	public static $response;
+
+	/**
+	 * Instance of Symfony\Component\HttpFoundation\Session\Session
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Session.html
+	 */
+	public static $session;
+
+	/**
+	 * preApplicationStart()
+	 * 
+	 * Hook which can be overwritten in Application.php, excuted before
+	 * the dispatcher is called.
 	 */
 	public static function preApplicationStart() {
-		// Nothing, over ride it!
+		// Nothing, overwrite it!
 	}
 
 	/**
-	 * Custom application start
+	 * afterApplicationStart()
+	 *
+	 * Hook which can be overwritten in Application.php, excuted after
+	 * the dispatcher was called.
 	 */
 	public static function afterApplicationStart() {
-		// Nothing, over ride it!
+		// Nothing, overwrite it!
 	}
 
 	/**
+	 * startSessionHandler()
+	 *
+	 * 
+	 */
+	public static function startSessionHandler() {
+		// Use auto expiring flash bag
+		$flashbag = new \Symfony\Component\HttpFoundation\Session\Flash\AutoExpireFlashBag();
+
+		// Init session handler
+		static::$session = new \Symfony\Component\HttpFoundation\Session\Session(null, null, $flashbag);
+
+		// Start session
+		static::$session->start();
+	}
+
+	/**
+	 * run()
+	 * 
 	 * Function to start the application and the framework behind it
 	 */
 	public final static function run() {
 		// Set default timezone
 		date_default_timezone_set(static::$defaultTimezone);
 
-		// Use Nautik as defaule php error handler
-		set_error_handler(array('\Nautik\Core\Exception', 'phpErrorHandler'));
-
-		// Use Nautik as default exception handler
-		set_exception_handler(array('\Nautik\Core\Exception', 'handler'));
+		// Throw php errors as exceptions
+		set_error_handler(function($errno, $errstr, $errfile, $errline) {
+			throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
+		});
 
 		// Set locale
 		setlocale(LC_ALL, static::$locale);
-		
-		// Setup the database
-		\Nautik\Data\Connection::init(static::$database);
+
+		// Init request from HttpFoundation
+		static::$request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+
+		// Init response from HttpFoundation
+		static::$response = \Symfony\Component\HttpFoundation\Response::create()->prepare(static::$request);
 
 		// Start session
-		static::startSession();
+		static::startSessionHandler();
 
-		// Load routes and the AppController
-		include APP . 'Routes.php';
-		include APP . 'controllers/base.php';
+		// Request context for routing
+		$context = new \Symfony\Component\Routing\RequestContext();
 
-		// Search in application/models for models
-		foreach ( glob( APP . "models/*.php" ) as $filename )
-			include $filename;
+		// Init Routing
+		static::$routing = new \Symfony\Component\Routing\Router(
+			// Use yaml
+			new \Symfony\Component\Routing\Loader\YamlFileLoader(new \Symfony\Component\Config\FileLocator([APP])),
+			
+			// Use routes.yml from application
+			APP . 'config/routes.yml',
+
+			// Options
+			array(
+				'cache_dir' => APP . 'cache/routing',
+				'debug' => self::$debug
+			),
+
+			// Context
+			$context->fromRequest(static::$request)
+		);
 
 		// Init Twig as template render
-		\Nautik\Action\Dispatcher::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'views'), array(
+		static::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'views'), array(
 			'cache' => APP . 'cache/templates',
 			'debug' => static::$debug
 		));
 
 		// Set timezone
-		\Nautik\Action\Dispatcher::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
+		static::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
 
-		// Add custom filters for nautik
-		\Nautik\Action\Dispatcher::$templateRender->addFilter('ldate', new \Twig_Filter_Function('\Nautik\Action\View::ldate', array('needs_environment' => true)));
-		\Nautik\Action\Dispatcher::$templateRender->addFilter('md5', new \Twig_Filter_Function('md5'));
+		// Load base controller
+		include APP . 'controllers/base.php';
 
 		// Pre hook
 		static::preApplicationStart();
 
 		// Run the dispatcher, if run is not silence
 		if ( false == defined( 'SILENCE' ) || 1 !== SILENCE ):
-			\Nautik\Action\Dispatcher::run();
+			static::dispatch();
 		endif;
 
 		// After hook
 		static::afterApplicationStart();
+	}
+
+	/**
+	 * dispatch()
+	 *
+	 * The dispatcher coordinates the request of the user, sends data to the controller
+	 * and receive data from it to render a template and displays the requested page
+	 */
+	public static function dispatch() {
+		// Find controller and action
+		try {
+			// Match path
+			$currentRoute = static::$routing->match(static::$request->getPathInfo());
+		} catch ( \Symfony\Component\Routing\Exception\ResourceNotFoundException $e ) {
+			// Not found route
+			$currentRoute = ['_controller' => 'errors', '_action' => '404'];
+		}
+
+		// Set action
+		if ( !isset( $currentRoute['_action'] ) )
+			$currentRoute['_action'] = 'index';
+
+		// Set request parameters
+		static::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($currentRoute);
+
+		// Try to load the requested controller and action
+		$data = static::performAction($currentRoute['_controller'], $currentRoute['_action']);
+
+		// Render template
+		if ( !isset( static::$response->template ) || false !== static::$response->template ):
+			// Generate template name if not set
+			if ( !isset( static::$response->template ) )
+				static::$response->template = $currentRoute['_controller'] . '/' . $currentRoute['_action'];
+			
+			// Load and render template
+			$data = self::$templateRender->loadTemplate(static::$response->template. '.html.twig')->render($data);
+		endif;
+
+		// Add content
+		static::$response->setContent($data);
+
+		// Send HTTP headers and content
+		static::$response->send();
+		exit;
+	}
+
+	/**
+	 * performAction(string $controller, string $action)
+	 *
+	 * Creates instance of the controller and runs the action method. Besides
+	 * the data returned from the action public variables from the controller
+	 * will be added to the returned array.
+	 */
+	public static function performAction($controller, $action) {
+		// Check if controller exists
+		if ( false == is_file( $controllerLocation = APP . 'controllers/' . $controller . '.php' ) )
+			throw new ControllerNotFoundException();
+		
+		// Include and init the controller
+		include $controllerLocation;
+		$controllerClass = "\\App\\" . $controller . "Controller";
+		$controllerClass = new $controllerClass;
+
+		// Check if the action exists
+		if ( 'errors' != $controller && false == method_exists($controllerClass, $action.= "Action" ) )
+			throw new ActionNotFoundException();
+		// Check if the error display action exists
+		elseif ( 'errors' == $controller && false == method_exists($controllerClass, $action = "display" . $action ) )
+			throw new ErrorNotFoundException();
+		
+		// Run the action
+		$data = $controllerClass->{$action}();
+
+		// Data fetching
+		if ( false === $controllerClass->__returnActionPerformed ):
+			// Format returned data
+			if ( false == is_array( $data ) )
+				$data = (array) $data;
+		
+			// Start reflection for data loading
+			$ref = new \ReflectionObject($controllerClass);
+			$properties = $ref->getProperties(\ReflectionProperty::IS_PUBLIC);
+			$controllerData = array();
+			
+			// Get public data
+			foreach ( $properties as $property ):
+				// Don't add internal variabels
+				if ( '__returnActionPerformed' == $property->getName() )
+					continue;
+						
+				// Add property to controller data
+				$controllerData[$property->getName()] = $property->getValue($controller);
+			endforeach;
+
+			// Merge data from controller and action
+			$data = array_merge($controllerData, $data);
+		endif;
+		
+		// Return the object
+		return $data;
+	}
+}
+
+/**
+ * Base class for every controller in the application
+ */
+class Controller {
+	/**
+	 * 
+	 */
+	public $__returnActionPerformed = false;
+	
+	/**
+	 * useTemplate(string $template[, int $status = 200])
+	 *
+	 * Sets the current template to $template, also allows the response
+	 * HTTP status code.
+	 */
+	protected function useTemplate($template, $status = 200) {
+		// Set the HTTP header status
+		Nautik::$response->setStatusCode($status);
+		
+		// Set the template file
+		Nautik::$response->template = $template;
+	}
+	
+	/**
+	 * renderJson(array $data[, string $callback = null, int $status = 200, array $headers = array()])
+	 *
+	 * 
+	 */
+	protected function renderJson($data, $callback = null, $status = 200, $headers = array()) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+
+		// Create a JSON response
+		$jsonResponse = \Symfony\Component\HttpFoundation\JsonResponse::create($data, $status, $headers);
+
+		// Set callback
+		if ( null !== $callback )
+			$jsonResponse->setCallback($callback);
+
+		// Send json to client
+		$jsonResponse->send();
+
+		// Exit application
+		exit;
+	}
+
+	/**
+	 * 
+	 */
+	protected function renderFile($file, $status = 200, $headers = array(), $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+
+		// Create a file response
+		$fileResponse = \Symfony\Component\HttpFoundation\BinaryFileResponse::create($file, $status, $headers, $public, $contentDisposition, $autoEtag, $autoLastModified);
+	
+		// Add request informationen
+		$fileResponse->prepare(Nautik::$request);
+
+		// Send file to client
+		$fileResponse->send();
+
+		// Exit application
+		exit;
+	}
+	
+	/**
+	 * renderText(string $text[, int $status = 200, string $minetype = 'html'])
+	 *
+	 */
+	protected function renderText($text, $status = 200, $minetype = 'html') {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+
+		// Set the HTTP header status
+		Nautik::$response->setStatusCode($status);
+		
+		// Set the minetype
+		Nautik::$response->headers->set('Content-Type', Nautik::$request->getMimeType($minetype));
+
+		// Disable templating
+		Nautik::$response->template = false;
+
+		return $text;
+	}
+	
+	/**
+	 *
+	 */
+	protected function renderError($status, $parameters = array()) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+				
+		// Set HTTP status code
+		Nautik::$response->setStatusCode($status);
+		
+		// Set parameters
+		Nautik::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
+
+		// Set template
+		Nautik::$response->template = "errors/" . $status;
+
+		// Run error action
+		return Nautik::performAction('errors', $status);
+	}
+
+	/**
+	 * 
+	 */
+	protected function render404($parameters = array()) {
+		return $this->renderError(404, $parameters);
+	}
+
+	/**
+	 * redirect(string $location[, int $status = 302, array $headers = array()])
+	 *
+	 * Sends a redirect to the client, defaults with a 302 HTTP status code (can
+	 * be changed with the $status parameter, use 301 for permanent redirects).
+	 */
+	protected function redirect($location, $status = 302, $headers = array()) {
+		// Check if a output action has be already performed
+		$this->_checkIfPerformed();
+		
+		// Perform a redirect
+		\Symfony\Component\HttpFoundation\RedirectResponse::create($location, $status, $headers)->send();
+
+		// Exit application
+		exit;
+	}
+
+	/**
+	 *
+	 */
+	protected function cookie($name, $default = null) {
+		return Nautik::$request->cookie->get($name, $default);
+	}
+
+	/**
+	 *
+	 */
+	protected function setCookie($name, $value = null, $expire = 0, $path = '/', $domain = null, $secure = false, $httpOnly = true) {
+		// Create cookie
+		$cookie = new \Symfony\Component\HttpFoundation\Cookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
+
+		// Add cookie to response
+		Nautik::$response->headers->addCookie($cookie);
+	}
+
+	/**
+	 *
+	 */
+	protected function clearCookie($name, $path = '/', $domain = null) {
+		// Clear cookie
+		Nautik::$response->headers->clearCookie($name, $path, $domain);
+	}
+
+	/**
+	 * flash()
+	 * 
+	 * Access the flash bag from Symfony\Component\HttpFoundation\Session\Session
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Flash/FlashBag.html
+	 */
+	protected function flash() {
+		// Get flash message bag
+		return Nautik::$session->getFlashBag();
+	}
+
+	/**
+	 * session()
+	 *
+	 * Access Symfony\Component\HttpFoundation\Session\Session
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Session.html
+	 */
+	protected function session() {
+		// Get session
+		return Nautik::$session;
+	}
+
+	/**
+	 * request()
+	 *
+	 * Access Symfony\Component\HttpFoundation\Request
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html
+	 */
+	protected function request() {
+		// Get request
+		return Nautik::$request;
+	}
+
+	/**
+	 * response()
+	 *
+	 * Access Symfony\Component\HttpFoundation\Response
+	 *
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Response.html
+	 */
+	protected function response() {
+		// Get response
+		return Nautik::$response;
+	}
+
+	/**
+	 * url(string $name[, array $parameters = array()])
+	 *
+	 * Generates a URL or path for a specific route based on the given parameters. Parameters
+	 * that reference placeholders in the route pattern will substitute them in the path or
+	 * hostname. Extra params are added as query string to the URL.
+	 */
+	protected function url($name, $parameters = array()) {
+		// Generate URL
+		return Nautik::$routing->generate($name, $parameters);
+	}
+
+	/**
+	 *
+	 */
+	protected function get($name, $default = null) {
+		return Nautik::$request->query->get($name, $default);
+	}
+
+	/**
+	 *
+	 */
+	protected function post($name, $default = null) {
+		return Nautik::$request->request->get($name, $default);
+	}
+
+	/**
+	 *
+	 */
+	protected function attr($name, $default = null) {
+		return Nautik::$request->attributes->get($name, $default);
+	}
+	
+	/**
+	 * _checkIfPerformed()
+	 */
+	private function _checkIfPerformed() {
+		// Check if a return action was already preformed
+		if ( $this->__returnActionPerformed )
+			throw new ReturnActionAlreadyPerformedException();
+	
+		// Set return action preformed to true
+		$this->__returnActionPerformed = true;
 	}
 }
