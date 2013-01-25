@@ -179,7 +179,7 @@ class Nautik {
 			// Options
 			array(
 				'cache_dir' => APP . 'cache/routing',
-				'debug' => self::$debug
+				'debug' => static::$debug
 			),
 
 			// Context
@@ -243,7 +243,7 @@ class Nautik {
 				static::$response->template = $currentRoute['_controller'] . '/' . $currentRoute['_action'];
 			
 			// Load and render template
-			$data = self::$templateRender->loadTemplate(static::$response->template. '.html.twig')->render($data);
+			$data = static::$templateRender->loadTemplate(static::$response->template. '.html.twig')->render($data);
 		endif;
 
 		// Add content
@@ -328,10 +328,10 @@ class Controller {
 	 */
 	protected function useTemplate($template, $status = 200) {
 		// Set the HTTP header status
-		Nautik::$response->setStatusCode($status);
+		\All\Application::$response->setStatusCode($status);
 		
 		// Set the template file
-		Nautik::$response->template = $template;
+		\All\Application::$response->template = $template;
 	}
 	
 	/**
@@ -368,7 +368,7 @@ class Controller {
 		$fileResponse = \Symfony\Component\HttpFoundation\BinaryFileResponse::create($file, $status, $headers, $public, $contentDisposition, $autoEtag, $autoLastModified);
 	
 		// Add request informationen
-		$fileResponse->prepare(Nautik::$request);
+		$fileResponse->prepare(\App\Application::$request);
 
 		// Send file to client
 		$fileResponse->send();
@@ -386,13 +386,13 @@ class Controller {
 		$this->_checkIfPerformed();
 
 		// Set the HTTP header status
-		Nautik::$response->setStatusCode($status);
+		\All\Application::$response->setStatusCode($status);
 		
 		// Set the minetype
-		Nautik::$response->headers->set('Content-Type', Nautik::$request->getMimeType($minetype));
+		\All\Application::$response->headers->set('Content-Type', \All\Application::$request->getMimeType($minetype));
 
 		// Disable templating
-		Nautik::$response->template = false;
+		\All\Application::$response->template = false;
 
 		return $text;
 	}
@@ -405,16 +405,16 @@ class Controller {
 		$this->_checkIfPerformed();
 				
 		// Set HTTP status code
-		Nautik::$response->setStatusCode($status);
+		\All\Application::$response->setStatusCode($status);
 		
 		// Set parameters
-		Nautik::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
+		\All\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
 
 		// Set template
-		Nautik::$response->template = "errors/" . $status;
+		\All\Application::$response->template = "errors/" . $status;
 
 		// Run error action
-		return Nautik::performAction('errors', $status);
+		return \All\Application::performAction('errors', $status);
 	}
 
 	/**
@@ -445,7 +445,7 @@ class Controller {
 	 *
 	 */
 	protected function cookie($name, $default = null) {
-		return Nautik::$request->cookie->get($name, $default);
+		return \All\Application::$request->cookie->get($name, $default);
 	}
 
 	/**
@@ -456,7 +456,7 @@ class Controller {
 		$cookie = new \Symfony\Component\HttpFoundation\Cookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
 
 		// Add cookie to response
-		Nautik::$response->headers->addCookie($cookie);
+		\All\Application::$response->headers->addCookie($cookie);
 	}
 
 	/**
@@ -464,7 +464,7 @@ class Controller {
 	 */
 	protected function clearCookie($name, $path = '/', $domain = null) {
 		// Clear cookie
-		Nautik::$response->headers->clearCookie($name, $path, $domain);
+		\All\Application::$response->headers->clearCookie($name, $path, $domain);
 	}
 
 	/**
@@ -476,7 +476,7 @@ class Controller {
 	 */
 	protected function flash() {
 		// Get flash message bag
-		return Nautik::$session->getFlashBag();
+		return \All\Application::$session->getFlashBag();
 	}
 
 	/**
@@ -488,7 +488,7 @@ class Controller {
 	 */
 	protected function session() {
 		// Get session
-		return Nautik::$session;
+		return \All\Application::$session;
 	}
 
 	/**
@@ -500,7 +500,7 @@ class Controller {
 	 */
 	protected function request() {
 		// Get request
-		return Nautik::$request;
+		return \All\Application::$request;
 	}
 
 	/**
@@ -512,7 +512,7 @@ class Controller {
 	 */
 	protected function response() {
 		// Get response
-		return Nautik::$response;
+		return \All\Application::$response;
 	}
 
 	/**
@@ -524,28 +524,28 @@ class Controller {
 	 */
 	protected function url($name, $parameters = array()) {
 		// Generate URL
-		return Nautik::$routing->generate($name, $parameters);
+		return \All\Application::$routing->generate($name, $parameters);
 	}
 
 	/**
 	 *
 	 */
 	protected function get($name, $default = null) {
-		return Nautik::$request->query->get($name, $default);
+		return \All\Application::$request->query->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function post($name, $default = null) {
-		return Nautik::$request->request->get($name, $default);
+		return \All\Application::$request->request->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function attr($name, $default = null) {
-		return Nautik::$request->attributes->get($name, $default);
+		return \All\Application::$request->attributes->get($name, $default);
 	}
 	
 	/**
