@@ -328,10 +328,10 @@ class Controller {
 	 */
 	protected function useTemplate($template, $status = 200) {
 		// Set the HTTP header status
-		\All\Application::$response->setStatusCode($status);
+		\App\Application::$response->setStatusCode($status);
 		
 		// Set the template file
-		\All\Application::$response->template = $template;
+		\App\Application::$response->template = $template;
 	}
 	
 	/**
@@ -386,13 +386,13 @@ class Controller {
 		$this->_checkIfPerformed();
 
 		// Set the HTTP header status
-		\All\Application::$response->setStatusCode($status);
+		\App\Application::$response->setStatusCode($status);
 		
 		// Set the minetype
-		\All\Application::$response->headers->set('Content-Type', \All\Application::$request->getMimeType($minetype));
+		\App\Application::$response->headers->set('Content-Type', \App\Application::$request->getMimeType($minetype));
 
 		// Disable templating
-		\All\Application::$response->template = false;
+		\App\Application::$response->template = false;
 
 		return $text;
 	}
@@ -405,16 +405,16 @@ class Controller {
 		$this->_checkIfPerformed();
 				
 		// Set HTTP status code
-		\All\Application::$response->setStatusCode($status);
+		\App\Application::$response->setStatusCode($status);
 		
 		// Set parameters
-		\All\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
+		\App\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
 
 		// Set template
-		\All\Application::$response->template = "errors/" . $status;
+		\App\Application::$response->template = "errors/" . $status;
 
 		// Run error action
-		return \All\Application::performAction('errors', $status);
+		return \App\Application::performAction('errors', $status);
 	}
 
 	/**
@@ -445,7 +445,7 @@ class Controller {
 	 *
 	 */
 	protected function cookie($name, $default = null) {
-		return \All\Application::$request->cookie->get($name, $default);
+		return \App\Application::$request->cookie->get($name, $default);
 	}
 
 	/**
@@ -456,7 +456,7 @@ class Controller {
 		$cookie = new \Symfony\Component\HttpFoundation\Cookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
 
 		// Add cookie to response
-		\All\Application::$response->headers->addCookie($cookie);
+		\App\Application::$response->headers->addCookie($cookie);
 	}
 
 	/**
@@ -464,7 +464,7 @@ class Controller {
 	 */
 	protected function clearCookie($name, $path = '/', $domain = null) {
 		// Clear cookie
-		\All\Application::$response->headers->clearCookie($name, $path, $domain);
+		\App\Application::$response->headers->clearCookie($name, $path, $domain);
 	}
 
 	/**
@@ -476,7 +476,7 @@ class Controller {
 	 */
 	protected function flash() {
 		// Get flash message bag
-		return \All\Application::$session->getFlashBag();
+		return \App\Application::$session->getFlashBag();
 	}
 
 	/**
@@ -488,7 +488,7 @@ class Controller {
 	 */
 	protected function session() {
 		// Get session
-		return \All\Application::$session;
+		return \App\Application::$session;
 	}
 
 	/**
@@ -500,7 +500,7 @@ class Controller {
 	 */
 	protected function request() {
 		// Get request
-		return \All\Application::$request;
+		return \App\Application::$request;
 	}
 
 	/**
@@ -512,7 +512,7 @@ class Controller {
 	 */
 	protected function response() {
 		// Get response
-		return \All\Application::$response;
+		return \App\Application::$response;
 	}
 
 	/**
@@ -524,28 +524,28 @@ class Controller {
 	 */
 	protected function url($name, $parameters = array()) {
 		// Generate URL
-		return \All\Application::$routing->generate($name, $parameters);
+		return \App\Application::$routing->generate($name, $parameters);
 	}
 
 	/**
 	 *
 	 */
 	protected function get($name, $default = null) {
-		return \All\Application::$request->query->get($name, $default);
+		return \App\Application::$request->query->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function post($name, $default = null) {
-		return \All\Application::$request->request->get($name, $default);
+		return \App\Application::$request->request->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function attr($name, $default = null) {
-		return \All\Application::$request->attributes->get($name, $default);
+		return \App\Application::$request->attributes->get($name, $default);
 	}
 	
 	/**
