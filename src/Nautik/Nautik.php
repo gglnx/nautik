@@ -194,6 +194,11 @@ class Nautik {
 
 		// Set timezone
 		static::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
+		
+		// Add globals
+		static::$templateRender->addGlobal('request', \App\Application::$request);
+		static::$templateRender->addGlobal('response', \App\Application::$response);
+		static::$templateRender->addGlobal('routing', \App\Application::$routing);
 
 		// Load base controller
 		include APP . 'controllers/base.php';
