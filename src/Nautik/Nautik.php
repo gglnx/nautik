@@ -299,7 +299,7 @@ class Nautik {
 					continue;
 						
 				// Add property to controller data
-				$controllerData[$property->getName()] = $property->getValue($controller);
+				$controllerData[$property->getName()] = $property->getValue($controllerClass);
 			endforeach;
 
 			// Merge data from controller and action
