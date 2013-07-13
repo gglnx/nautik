@@ -39,7 +39,7 @@ namespace Nautik;
 class NautikException extends \Exception { }
 class ControllerNotFoundException extends NautikException { }
 class ActionNotFoundException extends NautikException { }
-class ErrorNotFoundException extends NautikException { }
+class ErrorActionNotFoundException extends NautikException { }
 class ReturnActionAlreadyPerformedException extends NautikException { }
 
 /**
@@ -67,6 +67,12 @@ class Nautik {
 	 * @see http://www.php.net/setlocale
 	 */
 	public static $locale = "";
+	
+	/**
+	 * Default route
+	 * Used to catch not found routes and display an 404 error page
+	 */
+	public static $defaultRoute = ['_controller' => 'errors', '_action' => '404'];
 
 	/**
 	 * Instance of Twig_Environment
@@ -227,8 +233,8 @@ class Nautik {
 			// Match path
 			$currentRoute = static::$routing->match(static::$request->getPathInfo());
 		} catch ( \Symfony\Component\Routing\Exception\ResourceNotFoundException $e ) {
-			// Not found route
-			$currentRoute = ['_controller' => 'errors', '_action' => '404'];
+			// Use default route
+			$currentRoute = static::$defaultRoute;
 		}
 
 		// Set action
@@ -280,8 +286,8 @@ class Nautik {
 		if ( 'errors' != $controller && false == method_exists($controllerClass, $action.= "Action" ) )
 			throw new ActionNotFoundException();
 		// Check if the error display action exists
-		elseif ( 'errors' == $controller && false == method_exists($controllerClass, $action = "display" . $action ) )
-			throw new ErrorNotFoundException();
+		elseif ( $controller == static::$defaultRoute['_controller'] && false == method_exists($controllerClass, $action = "display" . $action ) )
+			throw new ErrorActionNotFoundException();
 		
 		// Run the action
 		$data = $controllerClass->{$action}();
