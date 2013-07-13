@@ -552,6 +552,48 @@ class Controller {
 	protected function attr($name, $default = null) {
 		return \App\Application::$request->attributes->get($name, $default);
 	}
+
+	/**
+	 *
+	 */
+	protected function isMethodRequest($method) {
+		return ( strtolower( $method ) == strtolower( $_SERVER["REQUEST_METHOD"] ) );
+	}
+	
+	/**
+	 *
+	 */
+	protected function isPostRequest() {
+		return $this->isMethodRequest("post");
+	}
+	
+	/**
+	 *
+	 */
+	protected function isGetRequest() {
+		return $this->isMethodRequest("get");
+	}
+	
+	/**
+	 *
+	 */
+	protected function isDeleteRequest() {
+		return $this->isMethodRequest("delete");
+	}
+	
+	/**
+	 *
+	 */
+	protected function isPutRequest() {
+		return $this->isMethodRequest("put");
+	}
+	
+	/**
+	 *
+	 */
+	protected function isAjaxRequest() {
+		return ( isset( $_SERVER['HTTP_X_REQUESTED_WITH'] ) && 'xmlhttprequest' == strtolower( $_SERVER['HTTP_X_REQUESTED_WITH'] ) );
+	}
 	
 	/**
 	 * _checkIfPerformed()
