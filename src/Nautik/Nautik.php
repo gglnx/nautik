@@ -205,6 +205,9 @@ class Nautik {
 		static::$templateRender->addGlobal("request", static::$request);
 		static::$templateRender->addGlobal("response", static::$response);
 		static::$templateRender->addGlobal("routing", static::$routing);
+		
+		// Add routing extension
+		static::$templateRender->addExtension(new TwigRoutingExtension());
 
 		// Load base controller
 		include APP . 'controllers/base.php';
@@ -319,6 +322,56 @@ class Nautik {
 		
 		// Return the object
 		return $data;
+	}
+}
+
+/**
+ * Provides integration of the Routing component with Twig.
+ */
+class TwigRoutingExtension extends \Twig_Extension {
+	/**
+	 * 
+	 */
+	public function getName() {
+		return 'routing';
+	}
+
+	/**
+	 * 
+	 */
+	public function getFunctions() {
+		return array(
+			'url' => new \Twig_Function_Method($this, 'getUrl', array('is_safe_callback' => array($this, 'isUrlGenerationSafe'))),
+			'path' => new \Twig_Function_Method($this, 'getPath', array('is_safe_callback' => array($this, 'isUrlGenerationSafe'))),
+		);
+	}
+
+	/**
+	 * 
+	 */
+	public function getPath($name, $parameters = array(), $relative = false) {
+		return \App\Application::$routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
+	}
+
+	/**
+	 * 
+	 */
+	public function getUrl($name, $parameters = array(), $schemeRelative = false) {
+		return \App\Application::$routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
+	}
+
+	/**
+	 * 
+	 */
+	public function isUrlGenerationSafe(\Twig_Node $argsNode) {
+		$paramsNode = $argsNode->hasNode('parameters') ? $argsNode->getNode('parameters') : (
+			$argsNode->hasNode(1) ? $argsNode->getNode(1) : null
+		);
+
+		if ( null === $paramsNode || $paramsNode instanceof \Twig_Node_Expression_Array && count( $paramsNode ) <= 2 && ( !$paramsNode->hasNode( 1 ) || $paramsNode->getNode( 1 ) instanceof \Twig_Node_Expression_Constant ) )
+			return array('html');
+
+		return array();
 	}
 }
 
