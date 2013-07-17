@@ -206,7 +206,7 @@ class Nautik {
 		static::$templateRender->addGlobal("response", static::$response);
 		static::$templateRender->addGlobal("routing", static::$routing);
 		static::$templateRender->addGlobal("session", static::$session);
-		static::$templateRender->addGlobal("flash", static::$flash->getFlashBag());
+		static::$templateRender->addGlobal("flash", static::$session->getFlashBag());
 		
 		// Add routing extension
 		static::$templateRender->addExtension(new TwigRoutingExtension());
