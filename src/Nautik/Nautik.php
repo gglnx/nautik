@@ -280,8 +280,7 @@ class Nautik {
 			throw new ControllerNotFoundException();
 		
 		// Include and init the controller
-		include $controllerLocation;
-		$controllerClass = "\\App\\Controllers\\{$controller}";
+		$controllerClass = "\\Application\\Controllers\\{$controller}";
 		$controllerClass = new $controllerClass;
 
 		// Check if the action exists
@@ -349,14 +348,14 @@ class TwigRoutingExtension extends \Twig_Extension {
 	 * 
 	 */
 	public function getPath($name, $parameters = array(), $relative = false) {
-		return \App\Application::$routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
+		return \Application\Application::$routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
 	}
 
 	/**
 	 * 
 	 */
 	public function getUrl($name, $parameters = array(), $schemeRelative = false) {
-		return \App\Application::$routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
+		return \Application\Application::$routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
 	}
 
 	/**
@@ -391,10 +390,10 @@ class Controller {
 	 */
 	protected function useTemplate($template, $status = 200) {
 		// Set the HTTP header status
-		\App\Application::$response->setStatusCode($status);
+		\Application\Application::$response->setStatusCode($status);
 		
 		// Set the template file
-		\App\Application::$response->template = $template;
+		\Application\Application::$response->template = $template;
 	}
 	
 	/**
@@ -431,7 +430,7 @@ class Controller {
 		$fileResponse = \Symfony\Component\HttpFoundation\BinaryFileResponse::create($file, $status, $headers, $public, $contentDisposition, $autoEtag, $autoLastModified);
 	
 		// Add request informationen
-		$fileResponse->prepare(\App\Application::$request);
+		$fileResponse->prepare(\Application\Application::$request);
 
 		// Send file to client
 		$fileResponse->send();
@@ -449,13 +448,13 @@ class Controller {
 		$this->_checkIfPerformed();
 
 		// Set the HTTP header status
-		\App\Application::$response->setStatusCode($status);
+		\Application\Application::$response->setStatusCode($status);
 		
 		// Set the minetype
-		\App\Application::$response->headers->set('Content-Type', \App\Application::$request->getMimeType($minetype));
+		\Application\Application::$response->headers->set('Content-Type', \Application\Application::$request->getMimeType($minetype));
 
 		// Disable templating
-		\App\Application::$response->template = false;
+		\Application\Application::$response->template = false;
 
 		return $text;
 	}
@@ -468,16 +467,16 @@ class Controller {
 		$this->_checkIfPerformed();
 				
 		// Set HTTP status code
-		\App\Application::$response->setStatusCode($status);
+		\Application\Application::$response->setStatusCode($status);
 		
 		// Set parameters
-		\App\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
+		\Application\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
 
 		// Set template
-		\App\Application::$response->template = "errors/" . $status;
+		\Application\Application::$response->template = "errors/" . $status;
 
 		// Run error action
-		return \App\Application::performAction('errors', $status);
+		return \Application\Application::performAction('errors', $status);
 	}
 
 	/**
@@ -508,7 +507,7 @@ class Controller {
 	 *
 	 */
 	protected function cookie($name, $default = null) {
-		return \App\Application::$request->cookie->get($name, $default);
+		return \Application\Application::$request->cookie->get($name, $default);
 	}
 
 	/**
@@ -519,7 +518,7 @@ class Controller {
 		$cookie = new \Symfony\Component\HttpFoundation\Cookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
 
 		// Add cookie to response
-		\App\Application::$response->headers->addCookie($cookie);
+		\Application\Application::$response->headers->addCookie($cookie);
 	}
 
 	/**
@@ -527,7 +526,7 @@ class Controller {
 	 */
 	protected function clearCookie($name, $path = '/', $domain = null) {
 		// Clear cookie
-		\App\Application::$response->headers->clearCookie($name, $path, $domain);
+		\Application\Application::$response->headers->clearCookie($name, $path, $domain);
 	}
 
 	/**
@@ -539,7 +538,7 @@ class Controller {
 	 */
 	protected function flash() {
 		// Get flash message bag
-		return \App\Application::$session->getFlashBag();
+		return \Application\Application::$session->getFlashBag();
 	}
 
 	/**
@@ -551,7 +550,7 @@ class Controller {
 	 */
 	protected function session() {
 		// Get session
-		return \App\Application::$session;
+		return \Application\Application::$session;
 	}
 
 	/**
@@ -563,7 +562,7 @@ class Controller {
 	 */
 	protected function request() {
 		// Get request
-		return \App\Application::$request;
+		return \Application\Application::$request;
 	}
 
 	/**
@@ -575,7 +574,7 @@ class Controller {
 	 */
 	protected function response() {
 		// Get response
-		return \App\Application::$response;
+		return \Application\Application::$response;
 	}
 
 	/**
@@ -587,28 +586,28 @@ class Controller {
 	 */
 	protected function url($name, $parameters = array()) {
 		// Generate URL
-		return \App\Application::$routing->generate($name, $parameters);
+		return \Application\Application::$routing->generate($name, $parameters);
 	}
 
 	/**
 	 *
 	 */
 	protected function get($name, $default = null) {
-		return \App\Application::$request->query->get($name, $default);
+		return \Application\Application::$request->query->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function post($name, $default = null) {
-		return \App\Application::$request->request->get($name, $default);
+		return \Application\Application::$request->request->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function attr($name, $default = null) {
-		return \App\Application::$request->attributes->get($name, $default);
+		return \Application\Application::$request->attributes->get($name, $default);
 	}
 
 	/**
@@ -650,7 +649,7 @@ class Controller {
 	 *
 	 */
 	protected function isAjaxRequest() {
-		return \App\Application::$request->isXmlHttpRequest();
+		return \Application\Application::$request->isXmlHttpRequest();
 	}
 	
 	/**
