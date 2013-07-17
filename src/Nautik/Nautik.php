@@ -201,10 +201,12 @@ class Nautik {
 		// Set timezone
 		static::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
 		
-		// Add request, response and routing as a global to Twig
+		// Allow access to symfony component form views
 		static::$templateRender->addGlobal("request", static::$request);
 		static::$templateRender->addGlobal("response", static::$response);
 		static::$templateRender->addGlobal("routing", static::$routing);
+		static::$templateRender->addGlobal("session", static::$session);
+		static::$templateRender->addGlobal("flash", static::$flash->getFlashBag());
 		
 		// Add routing extension
 		static::$templateRender->addExtension(new TwigRoutingExtension());
