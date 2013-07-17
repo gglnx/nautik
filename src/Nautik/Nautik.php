@@ -72,7 +72,7 @@ class Nautik {
 	 * Default route
 	 * Used to catch not found routes and display an 404 error page
 	 */
-	public static $defaultRoute = ['_controller' => 'errors', '_action' => '404'];
+	public static $defaultRoute = ['_controller' => 'Errors', '_action' => '404'];
 
 	/**
 	 * Instance of Twig_Environment
@@ -211,9 +211,6 @@ class Nautik {
 		// Add routing extension
 		static::$templateRender->addExtension(new TwigRoutingExtension());
 
-		// Load base controller
-		include APP . 'controllers/base.php';
-
 		// Pre hook
 		static::preApplicationStart();
 
@@ -284,11 +281,11 @@ class Nautik {
 		
 		// Include and init the controller
 		include $controllerLocation;
-		$controllerClass = "\\App\\" . $controller . "Controller";
+		$controllerClass = "\\App\\Controllers\\{$controller}";
 		$controllerClass = new $controllerClass;
 
 		// Check if the action exists
-		if ( 'errors' != $controller && false == method_exists($controllerClass, $action.= "Action" ) )
+		if ( 'Errors' != $controller && false == method_exists($controllerClass, $action.= "Action" ) )
 			throw new ActionNotFoundException();
 		// Check if the error display action exists
 		elseif ( $controller == static::$defaultRoute['_controller'] && false == method_exists($controllerClass, $action = "display" . $action ) )
