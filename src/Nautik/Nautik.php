@@ -201,10 +201,10 @@ class Nautik {
 		// Set timezone
 		static::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
 		
-		// Add globals
-		static::$templateRender->addGlobal('request', \App\Application::$request);
-		static::$templateRender->addGlobal('response', \App\Application::$response);
-		static::$templateRender->addGlobal('routing', \App\Application::$routing);
+		// Add request, response and routing as a global to Twig
+		static::$templateRender->addGlobal("request", static::$request);
+		static::$templateRender->addGlobal("response", static::$response);
+		static::$templateRender->addGlobal("routing", static::$routing);
 
 		// Load base controller
 		include APP . 'controllers/base.php';
@@ -598,7 +598,7 @@ class Controller {
 	 *
 	 */
 	protected function isAjaxRequest() {
-		return ( isset( $_SERVER['HTTP_X_REQUESTED_WITH'] ) && 'xmlhttprequest' == strtolower( $_SERVER['HTTP_X_REQUESTED_WITH'] ) );
+		return \App\Application::$request->isXmlHttpRequest();
 	}
 	
 	/**
