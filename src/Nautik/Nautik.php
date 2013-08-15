@@ -476,7 +476,7 @@ class Controller {
 		\Application\Application::$response->template = "errors/" . $status;
 
 		// Run error action
-		return \Application\Application::performAction('errors', $status);
+		return \Application\Application::performAction(\Application\Application::$defaultRoute['_controller'], $status);
 	}
 
 	/**
