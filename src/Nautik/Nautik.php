@@ -253,7 +253,7 @@ class Nautik {
 		if ( !isset( static::$response->template ) || false !== static::$response->template ):
 			// Generate template name if not set
 			if ( !isset( static::$response->template ) )
-				static::$response->template = $currentRoute['_controller'] . '/' . $currentRoute['_action'];
+				static::$response->template = strtolower($currentRoute['_controller'] . '/' . $currentRoute['_action']);
 			
 			// Load and render template
 			$data = static::$templateRender->loadTemplate(static::$response->template. '.html.twig')->render($data);
