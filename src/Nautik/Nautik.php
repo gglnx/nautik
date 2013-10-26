@@ -180,11 +180,11 @@ class Nautik {
 			new \Symfony\Component\Routing\Loader\YamlFileLoader(new \Symfony\Component\Config\FileLocator([APP])),
 			
 			// Use routes.yml from application
-			APP . 'config/routes.yml',
+			APP . 'Config' . DIRECTORY_SEPARATOR . 'routes.yml',
 
 			// Options
 			array(
-				'cache_dir' => APP . 'cache/routing',
+				'cache_dir' => APP . 'Cache' . DIRECTORY_SEPARATOR . 'routing',
 				'debug' => static::$debug
 			),
 
@@ -193,8 +193,8 @@ class Nautik {
 		);
 
 		// Init Twig as template render
-		static::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'views'), array(
-			'cache' => APP . 'cache/templates',
+		static::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'Views'), array(
+			'cache' => APP . 'Cache' . DIRECTORY_SEPARATOR . 'templates',
 			'debug' => static::$debug
 		));
 
@@ -276,7 +276,7 @@ class Nautik {
 	 */
 	public static function performAction($controller, $action) {
 		// Check if controller exists
-		if ( false == is_file( $controllerLocation = APP . 'controllers/' . $controller . '.php' ) )
+		if ( false == is_file( $controllerLocation = APP . 'Controllers/' . $controller . '.php' ) )
 			throw new ControllerNotFoundException();
 		
 		// Include and init the controller
