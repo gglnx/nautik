@@ -45,12 +45,12 @@ class ReturnActionAlreadyPerformedException extends NautikException { }
 /**
  * Main class, contains start process and dispatcher function
  */
-class Nautik {
+class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 	/**
 	 * With this configuration variable you can enable the debug mode
 	 * of the application. All errors will be displayed.
 	 */
-	public static $debug = true;
+	public $debug = true;
 
 	/**
 	 * Default timezone of the application
@@ -58,7 +58,7 @@ class Nautik {
 	 *
 	 * @see http://www.php.net/timezones
 	 */
-	public static $defaultTimezone = "GMT";
+	public $defaultTimezone = "GMT";
 
 	/**
 	 * Locale of the application
@@ -66,48 +66,48 @@ class Nautik {
 	 *
 	 * @see http://www.php.net/setlocale
 	 */
-	public static $locale = "";
+	public $locale = "";
 	
 	/**
 	 * Default route
 	 * Used to catch not found routes and display an 404 error page
 	 */
-	public static $defaultRoute = ['_controller' => 'Errors', '_action' => '404'];
+	public $defaultRoute = ['_controller' => 'Errors', '_action' => '404'];
 
 	/**
 	 * Instance of Twig_Environment
 	 *
 	 * @see http://twig.sensiolabs.org/api/master/Twig_Environment.html
 	 */
-	public static $templateRender;
+	public $templateRender;
 
 	/**
 	 * Instance of Symfony\Component\Routing\Router
 	 *
 	 * @see http://api.symfony.com/master/Symfony/Component/Routing/Router.html
 	 */
-	public static $routing;
+	public $routing;
 
 	/**
-	 * Instance of Symfony\Component\HttpFoundation\Request
+	 * Instance of Symfony\Component\HttpFoundation\RequestStack
 	 *
-	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html
+	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/RequestStack.html
 	 */
-	public static $request;
+	public $requestStack;
 
 	/**
 	 * Instance of Symfony\Component\HttpFoundation\Response
 	 *
 	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Response.html
 	 */
-	public static $response;
+	public $response;
 
 	/**
 	 * Instance of Symfony\Component\HttpFoundation\Session\Session
 	 *
 	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Session.html
 	 */
-	public static $session;
+	public $session;
 
 	/**
 	 * preApplicationStart()
@@ -115,17 +115,7 @@ class Nautik {
 	 * Hook which can be overwritten in Application.php, excuted before
 	 * the dispatcher is called.
 	 */
-	public static function preApplicationStart() {
-		// Nothing, overwrite it!
-	}
-
-	/**
-	 * afterApplicationStart()
-	 *
-	 * Hook which can be overwritten in Application.php, excuted after
-	 * the dispatcher was called.
-	 */
-	public static function afterApplicationStart() {
+	public function preApplicationStart() {
 		// Nothing, overwrite it!
 	}
 
@@ -134,25 +124,25 @@ class Nautik {
 	 *
 	 * 
 	 */
-	public static function startSessionHandler() {
+	public function startSessionHandler() {
 		// Use auto expiring flash bag
 		$flashbag = new \Symfony\Component\HttpFoundation\Session\Flash\AutoExpireFlashBag();
 
 		// Init session handler
-		static::$session = new \Symfony\Component\HttpFoundation\Session\Session(null, null, $flashbag);
+		$this->session = new \Symfony\Component\HttpFoundation\Session\Session(null, null, $flashbag);
 
 		// Start session
-		static::$session->start();
+		$this->session->start();
 	}
 
 	/**
-	 * run()
+	 * handle()
 	 * 
 	 * Function to start the application and the framework behind it
 	 */
-	public final static function run() {
+	public final function handle(\Symfony\Component\HttpFoundation\Request $request, $type = self::MASTER_REQUEST, $catch = true) {
 		// Set default timezone
-		date_default_timezone_set(static::$defaultTimezone);
+		date_default_timezone_set($this->defaultTimezone);
 
 		// Throw php errors as exceptions
 		set_error_handler(function($errno, $errstr, $errfile, $errline) {
@@ -160,22 +150,24 @@ class Nautik {
 		});
 
 		// Set locale
-		setlocale(LC_ALL, static::$locale);
+		setlocale(LC_ALL, $this->locale);
 
-		// Init request from HttpFoundation
-		static::$request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		// Init request stack and request
+		$this->requestStack = new \Symfony\Component\HttpFoundation\RequestStack;
+		$this->requestStack->push($request);
 
 		// Init response from HttpFoundation
-		static::$response = \Symfony\Component\HttpFoundation\Response::create()->prepare(static::$request);
+		$this->response = \Symfony\Component\HttpFoundation\Response::create()->prepare($this->requestStack->getCurrentRequest());
 
 		// Start session
-		static::startSessionHandler();
+		$this->startSessionHandler();
 
 		// Request context for routing
 		$context = new \Symfony\Component\Routing\RequestContext();
+		$context->fromRequest($this->requestStack->getCurrentRequest());
 
 		// Init Routing
-		static::$routing = new \Symfony\Component\Routing\Router(
+		$this->routing = new \Symfony\Component\Routing\Router(
 			// Use yaml
 			new \Symfony\Component\Routing\Loader\YamlFileLoader(new \Symfony\Component\Config\FileLocator([APP])),
 			
@@ -185,58 +177,44 @@ class Nautik {
 			// Options
 			array(
 				'cache_dir' => APP . 'Cache' . DIRECTORY_SEPARATOR . 'routing',
-				'debug' => static::$debug
+				'debug' => $this->debug
 			),
 
 			// Context
-			$context->fromRequest(static::$request)
+			$context
 		);
 
 		// Init Twig as template render
-		static::$templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'Views'), array(
+		$this->templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'Views'), array(
 			'cache' => APP . 'Cache' . DIRECTORY_SEPARATOR . 'templates',
-			'debug' => static::$debug
+			'debug' => $this->debug
 		));
 
 		// Set timezone
-		static::$templateRender->getExtension('core')->setTimezone(static::$defaultTimezone);
+		$this->templateRender->getExtension('core')->setTimezone($this->defaultTimezone);
 		
 		// Allow access to symfony component form views
-		static::$templateRender->addGlobal("request", static::$request);
-		static::$templateRender->addGlobal("response", static::$response);
-		static::$templateRender->addGlobal("routing", static::$routing);
-		static::$templateRender->addGlobal("session", static::$session);
-		static::$templateRender->addGlobal("flash", static::$session->getFlashBag());
+		$this->templateRender->addGlobal("request", $this->requestStack->getCurrentRequest());
+		$this->templateRender->addGlobal("response", $this->response);
+		$this->templateRender->addGlobal("routing", $this->routing);
+		$this->templateRender->addGlobal("session", $this->session);
+		$this->templateRender->addGlobal("flash", $this->session->getFlashBag());
 		
 		// Add routing extension
-		static::$templateRender->addExtension(new TwigRoutingExtension());
+		$twigRoutingExtension = new TwigRoutingExtension();
+		$twigRoutingExtension->setApplication($this);
+		$this->templateRender->addExtension($twigRoutingExtension);
 
 		// Pre hook
-		static::preApplicationStart();
+		$this->preApplicationStart();
 
-		// Run the dispatcher, if run is not silence
-		if ( false == defined( 'SILENCE' ) || 1 !== SILENCE ):
-			static::dispatch();
-		endif;
-
-		// After hook
-		static::afterApplicationStart();
-	}
-
-	/**
-	 * dispatch()
-	 *
-	 * The dispatcher coordinates the request of the user, sends data to the controller
-	 * and receive data from it to render a template and displays the requested page
-	 */
-	public static function dispatch() {
 		// Find controller and action
 		try {
 			// Match path
-			$currentRoute = static::$routing->match(static::$request->getPathInfo());
+			$currentRoute = $this->routing->match($this->requestStack->getCurrentRequest()->getPathInfo());
 		} catch ( \Symfony\Component\Routing\Exception\ResourceNotFoundException $e ) {
 			// Use default route
-			$currentRoute = static::$defaultRoute;
+			$currentRoute = $this->defaultRoute;
 		}
 
 		// Set action
@@ -244,27 +222,26 @@ class Nautik {
 			$currentRoute['_action'] = 'index';
 
 		// Set request parameters
-		static::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($currentRoute);
+		$this->requestStack->getCurrentRequest()->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($currentRoute);
 
 		// Try to load the requested controller and action
-		$data = static::performAction($currentRoute['_controller'], $currentRoute['_action']);
+		$data = $this->performAction($currentRoute['_controller'], $currentRoute['_action']);
 
 		// Render template
-		if ( !isset( static::$response->template ) || false !== static::$response->template ):
+		if ( !isset( $this->response->template ) || false !== $this->response->template ):
 			// Generate template name if not set
-			if ( !isset( static::$response->template ) )
-				static::$response->template = strtolower($currentRoute['_controller'] . '/' . $currentRoute['_action']);
+			if ( !isset( $this->response->template ) )
+				$this->response->template = strtolower($currentRoute['_controller'] . '/' . $currentRoute['_action']);
 			
 			// Load and render template
-			$data = static::$templateRender->loadTemplate(static::$response->template. '.html.twig')->render($data);
+			$data = $this->templateRender->loadTemplate($this->response->template . '.html.twig')->render($data);
 		endif;
 
 		// Add content
-		static::$response->setContent($data);
+		$this->response->setContent($data);
 
-		// Send HTTP headers and content
-		static::$response->send();
-		exit;
+		// Return response
+		return $this->response;
 	}
 
 	/**
@@ -274,33 +251,33 @@ class Nautik {
 	 * the data returned from the action public variables from the controller
 	 * will be added to the returned array.
 	 */
-	public static function performAction($controller, $action) {
+	public function performAction($controller, $action) {
 		// Check if controller exists
 		if ( false == is_file( $controllerLocation = APP . 'Controllers/' . $controller . '.php' ) )
 			throw new ControllerNotFoundException();
 		
 		// Include and init the controller
 		$controllerClass = "\\Application\\Controllers\\{$controller}";
-		$controllerClass = new $controllerClass;
+		$controllerObj = new $controllerClass($this);
 
 		// Check if the action exists
-		if ( 'Errors' != $controller && false == method_exists($controllerClass, $action.= "Action" ) )
+		if ( 'Errors' != $controller && false == method_exists($controllerObj, $action.= "Action" ) )
 			throw new ActionNotFoundException();
 		// Check if the error display action exists
-		elseif ( $controller == static::$defaultRoute['_controller'] && false == method_exists($controllerClass, $action = "display" . $action ) )
+		elseif ( $controller == $this->defaultRoute['_controller'] && false == method_exists($controllerObj, $action = "display" . $action ) )
 			throw new ErrorActionNotFoundException();
 		
 		// Run the action
-		$data = $controllerClass->{$action}();
+		$data = $controllerObj->{$action}();
 
 		// Data fetching
-		if ( false === $controllerClass->__returnActionPerformed ):
+		if ( false === $controllerObj->__returnActionPerformed ):
 			// Format returned data
 			if ( false == is_array( $data ) )
 				$data = (array) $data;
 		
 			// Start reflection for data loading
-			$ref = new \ReflectionObject($controllerClass);
+			$ref = new \ReflectionObject($controllerObj);
 			$properties = $ref->getProperties(\ReflectionProperty::IS_PUBLIC);
 			$controllerData = array();
 			
@@ -311,7 +288,7 @@ class Nautik {
 					continue;
 						
 				// Add property to controller data
-				$controllerData[$property->getName()] = $property->getValue($controllerClass);
+				$controllerData[$property->getName()] = $property->getValue($controllerObj);
 			endforeach;
 
 			// Merge data from controller and action
@@ -327,6 +304,18 @@ class Nautik {
  * Provides integration of the Routing component with Twig.
  */
 class TwigRoutingExtension extends \Twig_Extension {
+	/**
+	 *
+	 */
+	private $application;
+
+	/**
+	 *
+	 */
+	public function setApplication(Nautik $application) {
+		$this->application = $application;
+	}
+
 	/**
 	 * 
 	 */
@@ -348,14 +337,14 @@ class TwigRoutingExtension extends \Twig_Extension {
 	 * 
 	 */
 	public function getPath($name, $parameters = array(), $relative = false) {
-		return \Application\Application::$routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
+		return $this->application->routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
 	}
 
 	/**
 	 * 
 	 */
 	public function getUrl($name, $parameters = array(), $schemeRelative = false) {
-		return \Application\Application::$routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
+		return $this->application->routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
 	}
 
 	/**
@@ -381,6 +370,25 @@ class Controller {
 	 * 
 	 */
 	public $__returnActionPerformed = false;
+
+	/**
+	 *
+	 */
+	private $application;
+
+	/**
+	 *
+	 */
+	public function __construct(Nautik $application) {
+		$this->application = $application;
+	}
+
+	/**
+	 *
+	 */
+	public function getApplication() {
+		return $this->application;
+	}
 	
 	/**
 	 * useTemplate(string $template[, int $status = 200])
@@ -388,12 +396,15 @@ class Controller {
 	 * Sets the current template to $template, also allows the response
 	 * HTTP status code.
 	 */
-	protected function useTemplate($template, $status = 200) {
+	protected function useTemplate($template, $status = 200, $minetype = 'html') {
 		// Set the HTTP header status
-		\Application\Application::$response->setStatusCode($status);
+		$this->response()->setStatusCode($status);
+
+		// Set the minetype
+		$this->response()->headers->set('Content-Type', $this->request()->getMimeType($minetype));
 		
 		// Set the template file
-		\Application\Application::$response->template = $template;
+		$this->response()->template = $template;
 	}
 	
 	/**
@@ -412,11 +423,11 @@ class Controller {
 		if ( null !== $callback )
 			$jsonResponse->setCallback($callback);
 
-		// Send json to client
-		$jsonResponse->send();
+		// Add request informationen
+		$jsonResponse->prepare($this->application->requestStack->getCurrentRequest());
 
-		// Exit application
-		exit;
+		// Replace response object
+		$this->application->response = $jsonResponse;
 	}
 
 	/**
@@ -428,15 +439,12 @@ class Controller {
 
 		// Create a file response
 		$fileResponse = \Symfony\Component\HttpFoundation\BinaryFileResponse::create($file, $status, $headers, $public, $contentDisposition, $autoEtag, $autoLastModified);
-	
+
 		// Add request informationen
-		$fileResponse->prepare(\Application\Application::$request);
+		$fileResponse->prepare($this->application->requestStack->getCurrentRequest());
 
-		// Send file to client
-		$fileResponse->send();
-
-		// Exit application
-		exit;
+		// Replace response object
+		$this->application->response = $fileResponse;
 	}
 	
 	/**
@@ -447,14 +455,8 @@ class Controller {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
 
-		// Set the HTTP header status
-		\Application\Application::$response->setStatusCode($status);
-		
-		// Set the minetype
-		\Application\Application::$response->headers->set('Content-Type', \Application\Application::$request->getMimeType($minetype));
-
-		// Disable templating
-		\Application\Application::$response->template = false;
+		// Set template settings
+		$this->useTemplate(false, $status, $minetype);
 
 		return $text;
 	}
@@ -465,18 +467,15 @@ class Controller {
 	protected function renderError($status, $parameters = array()) {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
-				
-		// Set HTTP status code
-		\Application\Application::$response->setStatusCode($status);
+
+		// Set templating
+		$this->useTemplate("errors/" . $status, $status);
 		
 		// Set parameters
-		\Application\Application::$request->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
-
-		// Set template
-		\Application\Application::$response->template = "errors/" . $status;
+		$this->request()->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
 
 		// Run error action
-		return \Application\Application::performAction(\Application\Application::$defaultRoute['_controller'], $status);
+		return $this->application->performAction($this->application->defaultRoute['_controller'], $status);
 	}
 
 	/**
@@ -496,18 +495,25 @@ class Controller {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
 		
-		// Perform a redirect
-		\Symfony\Component\HttpFoundation\RedirectResponse::create($location, $status, $headers)->send();
+		// Create a redirect
+		$redirectResponse = \Symfony\Component\HttpFoundation\RedirectResponse::create($location, $status, $headers);
 
-		// Exit application
-		exit;
+		// Add request informationen
+		$redirectResponse->prepare($this->application->requestStack->getCurrentRequest());
+
+		// Replace response object
+		$this->application->response = $redirectResponse;
+
+		// Don't use a template
+		$this->useTemplate(false, $status);
 	}
 
 	/**
 	 *
 	 */
 	protected function cookie($name, $default = null) {
-		return \Application\Application::$request->cookie->get($name, $default);
+		// Get cookie
+		return $this->request()->cookie->get($name, $default);
 	}
 
 	/**
@@ -518,7 +524,7 @@ class Controller {
 		$cookie = new \Symfony\Component\HttpFoundation\Cookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
 
 		// Add cookie to response
-		\Application\Application::$response->headers->addCookie($cookie);
+		$this->response()->headers->addCookie($cookie);
 	}
 
 	/**
@@ -526,7 +532,7 @@ class Controller {
 	 */
 	protected function clearCookie($name, $path = '/', $domain = null) {
 		// Clear cookie
-		\Application\Application::$response->headers->clearCookie($name, $path, $domain);
+		$this->response()->headers->clearCookie($name, $path, $domain);
 	}
 
 	/**
@@ -538,7 +544,7 @@ class Controller {
 	 */
 	protected function flash() {
 		// Get flash message bag
-		return \Application\Application::$session->getFlashBag();
+		return $this->application->session->getFlashBag();
 	}
 
 	/**
@@ -550,7 +556,7 @@ class Controller {
 	 */
 	protected function session() {
 		// Get session
-		return \Application\Application::$session;
+		return $this->application->session;
 	}
 
 	/**
@@ -562,7 +568,7 @@ class Controller {
 	 */
 	protected function request() {
 		// Get request
-		return \Application\Application::$request;
+		return $this->application->requestStack->getCurrentRequest();
 	}
 
 	/**
@@ -574,7 +580,7 @@ class Controller {
 	 */
 	protected function response() {
 		// Get response
-		return \Application\Application::$response;
+		return $this->application->response;
 	}
 
 	/**
@@ -584,30 +590,54 @@ class Controller {
 	 * that reference placeholders in the route pattern will substitute them in the path or
 	 * hostname. Extra params are added as query string to the URL.
 	 */
-	protected function url($name, $parameters = array()) {
+	protected function url($name, $parameters = array(), $schemeRelative = false) {
 		// Generate URL
-		return \Application\Application::$routing->generate($name, $parameters);
+		return $this->application->routing->generate(
+			$name,
+			$parameters,
+			$schemeRelative ?
+				\Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH :
+				\Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL
+		);
+	}
+
+	/**
+	 * path(string $name[, array $parameters = array()])
+	 *
+	 * Generates a URL or path for a specific route based on the given parameters. Parameters
+	 * that reference placeholders in the route pattern will substitute them in the path or
+	 * hostname. Extra params are added as query string to the URL.
+	 */
+	protected function path($name, $parameters = array(), $relative = false) {
+		// Generate URL
+		return $this->application->routing->generate(
+			$name,
+			$parameters,
+			$relative ?
+				\Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH :
+				\Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH
+		);
 	}
 
 	/**
 	 *
 	 */
 	protected function get($name, $default = null) {
-		return \Application\Application::$request->query->get($name, $default);
+		return $this->request()->query->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function post($name, $default = null) {
-		return \Application\Application::$request->request->get($name, $default);
+		return $this->request()->get($name, $default);
 	}
 
 	/**
 	 *
 	 */
 	protected function attr($name, $default = null) {
-		return \Application\Application::$request->attributes->get($name, $default);
+		return $this->request()->attributes->get($name, $default);
 	}
 
 	/**
@@ -649,7 +679,7 @@ class Controller {
 	 *
 	 */
 	protected function isAjaxRequest() {
-		return \Application\Application::$request->isXmlHttpRequest();
+		return $this->request()->isXmlHttpRequest();
 	}
 	
 	/**
