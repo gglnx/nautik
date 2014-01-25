@@ -136,11 +136,9 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 	}
 
 	/**
-	 * handle()
-	 * 
-	 * Function to start the application and the framework behind it
+	 * setUpEnvironment()
 	 */
-	public final function handle(\Symfony\Component\HttpFoundation\Request $request, $type = self::MASTER_REQUEST, $catch = true) {
+	public function setUpEnvironment() {
 		// Set default timezone
 		date_default_timezone_set($this->defaultTimezone);
 
@@ -151,21 +149,12 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 		// Set locale
 		setlocale(LC_ALL, $this->locale);
+	}
 
-		// Init request stack and request
-		$this->requestStack = new \Symfony\Component\HttpFoundation\RequestStack;
-		$this->requestStack->push($request);
-
-		// Init response from HttpFoundation
-		$this->response = \Symfony\Component\HttpFoundation\Response::create()->prepare($this->requestStack->getCurrentRequest());
-
-		// Start session
-		$this->startSessionHandler();
-
-		// Request context for routing
-		$context = new \Symfony\Component\Routing\RequestContext();
-		$context->fromRequest($this->requestStack->getCurrentRequest());
-
+	/**
+	 * setUpRouting()
+	 */
+	public function setUpRouting($context = null) {
 		// Init Routing
 		$this->routing = new \Symfony\Component\Routing\Router(
 			// Use yaml
@@ -183,7 +172,12 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 			// Context
 			$context
 		);
+	}
 
+	/**
+	 * setUpTwig()
+	 */
+	public function setUpTwig() {
 		// Init Twig as template render
 		$this->templateRender = new \Twig_Environment(new \Twig_Loader_Filesystem(APP . 'Views'), array(
 			'cache' => APP . 'Cache' . DIRECTORY_SEPARATOR . 'templates',
@@ -192,6 +186,41 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 		// Set timezone
 		$this->templateRender->getExtension('core')->setTimezone($this->defaultTimezone);
+
+		// Add routing extension
+		$twigRoutingExtension = new TwigRoutingExtension();
+		$twigRoutingExtension->setApplication($this);
+		$this->templateRender->addExtension($twigRoutingExtension);
+	}
+
+	/**
+	 * handle()
+	 * 
+	 * Function to start the application and the framework behind it
+	 */
+	public final function handle(\Symfony\Component\HttpFoundation\Request $request, $type = self::MASTER_REQUEST, $catch = true) {
+		// Set up environment
+		$this->setUpEnvironment();
+
+		// Init request stack and request
+		$this->requestStack = new \Symfony\Component\HttpFoundation\RequestStack;
+		$this->requestStack->push($request);
+
+		// Init response from HttpFoundation
+		$this->response = \Symfony\Component\HttpFoundation\Response::create()->prepare($this->requestStack->getCurrentRequest());
+
+		// Start session
+		$this->startSessionHandler();
+
+		// Request context for routing
+		$context = new \Symfony\Component\Routing\RequestContext();
+		$context->fromRequest($this->requestStack->getCurrentRequest());
+
+		// Setup routing
+		$this->setUpRouting($context);
+
+		// Setup twig
+		$this->setUpTwig();
 		
 		// Allow access to symfony component form views
 		$this->templateRender->addGlobal("request", $this->requestStack->getCurrentRequest());
@@ -199,11 +228,6 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 		$this->templateRender->addGlobal("routing", $this->routing);
 		$this->templateRender->addGlobal("session", $this->session);
 		$this->templateRender->addGlobal("flash", $this->session->getFlashBag());
-		
-		// Add routing extension
-		$twigRoutingExtension = new TwigRoutingExtension();
-		$twigRoutingExtension->setApplication($this);
-		$this->templateRender->addExtension($twigRoutingExtension);
 
 		// Pre hook
 		$this->preApplicationStart();
@@ -242,6 +266,23 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 		// Return response
 		return $this->response;
+	}
+
+	/**
+	 * handleTask()
+	 */
+	public final function handleTask() {
+		// Set up environment
+		$this->setUpEnvironment();
+
+		// Setup routing
+		$this->setUpRouting();
+
+		// Setup twig
+		$this->setUpTwig();
+
+		// Pre hook
+		$this->preApplicationStart();
 	}
 
 	/**
