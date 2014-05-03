@@ -293,8 +293,11 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 	 * will be added to the returned array.
 	 */
 	public function performAction($controller, $action) {
+		// Replace namespace with directory separator
+		$controllerFile = str_replace("\\", DIRECTORY_SEPARATOR, $controller);
+
 		// Check if controller exists
-		if ( false == is_file( $controllerLocation = APP . 'Controllers/' . $controller . '.php' ) )
+		if ( false == is_file( $controllerLocation = APP . 'Controllers/' . $controllerFile . '.php' ) )
 			throw new ControllerNotFoundException();
 		
 		// Include and init the controller
