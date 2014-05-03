@@ -251,6 +251,10 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 		// Try to load the requested controller and action
 		$data = $this->performAction($currentRoute['_controller'], $currentRoute['_action']);
 
+		// Render json directly
+		if ( $this->response instanceof \Symfony\Component\HttpFoundation\JsonResponse )
+			return $this->response;
+
 		// Render template
 		if ( !isset( $this->response->template ) || false !== $this->response->template ):
 			// Generate template name if not set
