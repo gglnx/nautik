@@ -67,7 +67,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 	 * @see http://www.php.net/setlocale
 	 */
 	public $locale = "";
-	
+
 	/**
 	 * Default route
 	 * Used to catch not found routes and display an 404 error page
@@ -111,7 +111,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 	/**
 	 * preApplicationStart()
-	 * 
+	 *
 	 * Hook which can be overwritten in Application.php, excuted before
 	 * the dispatcher is called.
 	 */
@@ -122,7 +122,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 	/**
 	 * startSessionHandler()
 	 *
-	 * 
+	 *
 	 */
 	public function startSessionHandler() {
 		// Use auto expiring flash bag
@@ -159,7 +159,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 		$this->routing = new \Symfony\Component\Routing\Router(
 			// Use yaml
 			new \Symfony\Component\Routing\Loader\YamlFileLoader(new \Symfony\Component\Config\FileLocator([APP])),
-			
+
 			// Use routes.yml from application
 			APP . 'Config' . DIRECTORY_SEPARATOR . 'routes.yml',
 
@@ -195,7 +195,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 	/**
 	 * handle()
-	 * 
+	 *
 	 * Function to start the application and the framework behind it
 	 */
 	public final function handle(\Symfony\Component\HttpFoundation\Request $request, $type = self::MASTER_REQUEST, $catch = true) {
@@ -221,7 +221,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 
 		// Setup twig
 		$this->setUpTwig();
-		
+
 		// Allow access to symfony component form views
 		$this->templateRender->addGlobal("request", $this->requestStack->getCurrentRequest());
 		$this->templateRender->addGlobal("response", $this->response);
@@ -260,7 +260,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 			// Generate template name if not set
 			if ( !isset( $this->response->template ) )
 				$this->response->template = strtolower($currentRoute['_controller'] . '/' . $currentRoute['_action']);
-			
+
 			// Load and render template
 			$data = $this->templateRender->loadTemplate($this->response->template . '.html.twig')->render($data);
 		endif;
@@ -303,7 +303,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 		// Check if controller exists
 		if ( false == is_file( $controllerLocation = APP . 'Controllers/' . $controllerFile . '.php' ) )
 			throw new ControllerNotFoundException();
-		
+
 		// Include and init the controller
 		$controllerClass = "\\Application\\Controllers\\{$controller}";
 		$controllerObj = new $controllerClass($this);
@@ -314,7 +314,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 		// Check if the error display action exists
 		elseif ( $controller == $this->defaultRoute['_controller'] && false == method_exists($controllerObj, $action = "display" . $action ) )
 			throw new ErrorActionNotFoundException();
-		
+
 		// Run the action
 		$data = $controllerObj->{$action}();
 
@@ -323,18 +323,18 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 			// Format returned data
 			if ( false == is_array( $data ) )
 				$data = (array) $data;
-		
+
 			// Start reflection for data loading
 			$ref = new \ReflectionObject($controllerObj);
 			$properties = $ref->getProperties(\ReflectionProperty::IS_PUBLIC);
 			$controllerData = array();
-			
+
 			// Get public data
 			foreach ( $properties as $property ):
 				// Don't add internal variabels
 				if ( '__returnActionPerformed' == $property->getName() )
 					continue;
-						
+
 				// Add property to controller data
 				$controllerData[$property->getName()] = $property->getValue($controllerObj);
 			endforeach;
@@ -342,7 +342,7 @@ class Nautik implements \Symfony\Component\HttpKernel\HttpKernelInterface {
 			// Merge data from controller and action
 			$data = array_merge($controllerData, $data);
 		endif;
-		
+
 		// Return the object
 		return $data;
 	}
@@ -365,14 +365,14 @@ class TwigRoutingExtension extends \Twig_Extension {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public function getName() {
 		return 'routing';
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public function getFunctions() {
 		return array(
@@ -382,21 +382,21 @@ class TwigRoutingExtension extends \Twig_Extension {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public function getPath($name, $parameters = array(), $relative = false) {
 		return $this->application->routing->generate($name, $parameters, $relative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::RELATIVE_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_PATH);
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public function getUrl($name, $parameters = array(), $schemeRelative = false) {
 		return $this->application->routing->generate($name, $parameters, $schemeRelative ? \Symfony\Component\Routing\Generator\UrlGeneratorInterface::NETWORK_PATH : \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public function isUrlGenerationSafe(\Twig_Node $argsNode) {
 		$paramsNode = $argsNode->hasNode('parameters') ? $argsNode->getNode('parameters') : (
@@ -415,7 +415,7 @@ class TwigRoutingExtension extends \Twig_Extension {
  */
 class Controller {
 	/**
-	 * 
+	 *
 	 */
 	public $__returnActionPerformed = false;
 
@@ -437,7 +437,7 @@ class Controller {
 	public function getApplication() {
 		return $this->application;
 	}
-	
+
 	/**
 	 * useTemplate(string $template[, int $status = 200])
 	 *
@@ -450,15 +450,15 @@ class Controller {
 
 		// Set the minetype
 		$this->response()->headers->set('Content-Type', $this->request()->getMimeType($minetype));
-		
+
 		// Set the template file
 		$this->response()->template = $template;
 	}
-	
+
 	/**
 	 * renderJson(array $data[, string $callback = null, int $status = 200, array $headers = array()])
 	 *
-	 * 
+	 *
 	 */
 	protected function renderJson($data, $callback = null, $status = 200, $headers = array()) {
 		// Check if a output action has be already performed
@@ -479,7 +479,7 @@ class Controller {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	protected function renderFile($file, $status = 200, $headers = array(), $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true) {
 		// Check if a output action has be already performed
@@ -494,7 +494,7 @@ class Controller {
 		// Replace response object
 		$this->application->response = $fileResponse;
 	}
-	
+
 	/**
 	 * renderText(string $text[, int $status = 200, string $minetype = 'html'])
 	 *
@@ -508,7 +508,7 @@ class Controller {
 
 		return $text;
 	}
-	
+
 	/**
 	 *
 	 */
@@ -518,7 +518,7 @@ class Controller {
 
 		// Set templating
 		$this->useTemplate("errors/" . $status, $status);
-		
+
 		// Set parameters
 		$this->request()->attributes = new \Symfony\Component\HttpFoundation\ParameterBag($parameters);
 
@@ -527,7 +527,7 @@ class Controller {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	protected function render404($parameters = array()) {
 		return $this->renderError(404, $parameters);
@@ -542,7 +542,7 @@ class Controller {
 	protected function redirect($location, $status = 302, $headers = array()) {
 		// Check if a output action has be already performed
 		$this->_checkIfPerformed();
-		
+
 		// Create a redirect
 		$redirectResponse = \Symfony\Component\HttpFoundation\RedirectResponse::create($location, $status, $headers);
 
@@ -585,7 +585,7 @@ class Controller {
 
 	/**
 	 * flash()
-	 * 
+	 *
 	 * Access the flash bag from Symfony\Component\HttpFoundation\Session\Session
 	 *
 	 * @see http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Flash/FlashBag.html
@@ -694,42 +694,42 @@ class Controller {
 	protected function isMethodRequest($method) {
 		return ( strtolower( $method ) == strtolower( $_SERVER["REQUEST_METHOD"] ) );
 	}
-	
+
 	/**
 	 *
 	 */
 	protected function isPostRequest() {
 		return $this->isMethodRequest("post");
 	}
-	
+
 	/**
 	 *
 	 */
 	protected function isGetRequest() {
 		return $this->isMethodRequest("get");
 	}
-	
+
 	/**
 	 *
 	 */
 	protected function isDeleteRequest() {
 		return $this->isMethodRequest("delete");
 	}
-	
+
 	/**
 	 *
 	 */
 	protected function isPutRequest() {
 		return $this->isMethodRequest("put");
 	}
-	
+
 	/**
 	 *
 	 */
 	protected function isAjaxRequest() {
 		return $this->request()->isXmlHttpRequest();
 	}
-	
+
 	/**
 	 * _checkIfPerformed()
 	 */
@@ -737,7 +737,7 @@ class Controller {
 		// Check if a return action was already preformed
 		if ( $this->__returnActionPerformed )
 			throw new ReturnActionAlreadyPerformedException();
-	
+
 		// Set return action preformed to true
 		$this->__returnActionPerformed = true;
 	}
